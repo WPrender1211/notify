@@ -162,54 +162,49 @@ export const Stealth404Screen = ({ onUnlock }) => {
     };
   }, []);
 
-  // Database-Driven Shortcut with Hostinger Standalone Fallback
+  // Lightning-Fast, High-Precision Shortcut Listener
   useEffect(() => {
     let keySequenceBuffer = [];
     let sequenceTimeout = null;
-    let isVerifying = false;
 
-    const checkDatabaseShortcut = async (sequenceStr) => {
-      if (!sequenceStr || isVerifying) return;
-      isVerifying = true;
+    const triggerUnlock = () => {
+      keySequenceBuffer = [];
+      if (sequenceTimeout) clearTimeout(sequenceTimeout);
+      onUnlock();
+    };
 
-      const endpoint = `${apiBase}/api/auth/verify-shortcut`;
+    const verifySequence = async (sequenceStr) => {
+      if (!sequenceStr) return;
 
+      // 1. Instant Zero-Latency Local Match (Matches Ctrl+Y -> Alt+S immediately)
+      const clean = sequenceStr.toLowerCase().replace(/\s+/g, '');
+      if (clean.includes('ctrl+y->alt+s') || clean === 'ctrl+y->alt+s') {
+        triggerUnlock();
+        return;
+      }
+
+      // Only query backend if sequence is complete (has at least 2 steps)
+      if (!sequenceStr.includes('->')) return;
+
+      // 2. Database verification for customized master shortcuts
       try {
+        const endpoint = `${apiBase}/api/auth/verify-shortcut`;
         const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ sequence: sequenceStr })
         });
 
-        // If backend exists and responds
         if (res.ok) {
           const data = await res.json();
-          isVerifying = false;
           if (data && data.unlocked) {
-            keySequenceBuffer = [];
-            if (sequenceTimeout) clearTimeout(sequenceTimeout);
-            onUnlock();
-            return;
-          }
-        } else {
-          // If running on static Hostinger where /api/ returns 404 (no local node backend)
-          // Fallback verify the standard sequence so you are never locked out on Hostinger
-          isVerifying = false;
-          if (sequenceStr.toLowerCase().includes('ctrl+y->alt+s')) {
-            keySequenceBuffer = [];
-            if (sequenceTimeout) clearTimeout(sequenceTimeout);
-            onUnlock();
-            return;
+            triggerUnlock();
           }
         }
       } catch (err) {
-        // Network error (e.g. backend offline or not configured yet)
-        isVerifying = false;
-        if (sequenceStr.toLowerCase().includes('ctrl+y->alt+s')) {
-          keySequenceBuffer = [];
-          if (sequenceTimeout) clearTimeout(sequenceTimeout);
-          onUnlock();
-          return;
+        // Fallback for offline/static networks
+        if (clean.includes('ctrl+y->alt+s')) {
+          triggerUnlock();
         }
       }
     };
@@ -221,14 +216,18 @@ export const Stealth404Screen = ({ onUnlock }) => {
       const hasModifier = e.ctrlKey || e.altKey || e.metaKey;
       if (!hasModifier) return;
 
+      // Prevent browser default shortcut stealing (e.g. Alt key menu or Ctrl+Y redo)
+      if ((e.ctrlKey && keyLow === 'y') || (e.altKey && keyLow === 's')) {
+        e.preventDefault();
+      }
+
       const mods = [];
       if (e.ctrlKey) mods.push('Ctrl');
       if (e.altKey) mods.push('Alt');
       if (e.shiftKey) mods.push('Shift');
       if (e.metaKey) mods.push('Meta');
 
-      const charKey = (e.key.length === 1 ? e.key.toLowerCase() : e.key.toLowerCase());
-      const combo = (mods.length > 0 ? mods.join('+') + '+' : '') + charKey;
+      const combo = (mods.length > 0 ? mods.join('+') + '+' : '') + keyLow;
 
       keySequenceBuffer.push(combo);
       if (keySequenceBuffer.length > 4) keySequenceBuffer.shift();
@@ -236,13 +235,13 @@ export const Stealth404Screen = ({ onUnlock }) => {
       if (sequenceTimeout) clearTimeout(sequenceTimeout);
       sequenceTimeout = setTimeout(() => {
         keySequenceBuffer = [];
-      }, 4000);
+      }, 3500);
 
-      // Verify sequence against MySQL database or Hostinger standalone
-      checkDatabaseShortcut(keySequenceBuffer.join('->'));
+      const fullSequence = keySequenceBuffer.join('->');
+      verifySequence(fullSequence);
     };
 
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown, { passive: false });
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onUnlock, apiBase]);
 
