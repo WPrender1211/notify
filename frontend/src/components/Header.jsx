@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { PhoneIncoming, Bell, BellOff, Volume2, VolumeX, Play, Smartphone, X, FileText, Check, LogOut, Copy } from 'lucide-react';
+import { PhoneIncoming, Bell, BellOff, Volume2, VolumeX, Play, Smartphone, X, FileText, Check, LogOut, Copy, EyeOff, Shield } from 'lucide-react';
 
 export const Header = ({
   user,
   onLogout,
+  onHideDashboard,
   activeCall,
   isConnected,
   onOpenSimulator,
@@ -98,105 +99,109 @@ export const Header = ({
                     <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                       {activeCall.name || 'Unknown Caller'}
                     </div>
-                    <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
+                    <div style={{ fontSize: '0.82rem', color: 'var(--accent-primary)', fontWeight: 600 }}>
                       {activeCall.number}
                     </div>
-                    {activeCall.company && (
-                      <div style={{ fontSize: '0.78rem', color: 'var(--accent-cyan)', marginTop: '2px', fontWeight: 600 }}>
-                        🏢 {activeCall.company} {activeCall.tag && `• ${activeCall.tag}`}
-                      </div>
-                    )}
                   </div>
-                  <button className="btn btn-ghost btn-icon" onClick={() => setShowCallPopover(false)}>
+                  <button
+                    className="btn btn-ghost btn-icon"
+                    onClick={() => setShowCallPopover(false)}
+                    style={{ padding: '4px' }}
+                  >
                     <X size={16} />
                   </button>
                 </div>
 
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', fontSize: '0.78rem' }}>
-                  <span className="tag-badge">Device: {activeCall.device || 'Android'}</span>
-                  <span className="tag-badge" style={{ color: 'var(--accent-green)', borderColor: 'rgba(16,185,129,0.3)', background: 'var(--accent-green-light)' }}>
-                    ⏱️ Active: {callTimer}
-                  </span>
-                  {isMuted && (
-                    <span className="tag-badge" style={{ color: 'var(--accent-rose)', borderColor: 'rgba(225,29,72,0.3)', background: 'var(--accent-rose-light)' }}>
-                      🔕 Muted
-                    </span>
-                  )}
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '12px' }}>
+                  Device: <strong style={{ color: 'var(--text-secondary)' }}>{activeCall.device || 'Android Phone'}</strong>
                 </div>
 
-                <div className="form-group" style={{ marginBottom: '10px' }}>
-                  <label className="form-label">Quick Note during call</label>
-                  <textarea
-                    className="form-textarea"
-                    placeholder="E.g., Client requested follow up on invoice tomorrow..."
-                    value={quickNote}
-                    onChange={(e) => setQuickNote(e.target.value)}
-                    rows={2}
-                  />
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                  <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={handleSaveQuickNote}>
-                    {noteSaved ? <><Check size={14} /> Saved</> : <><FileText size={14} /> Save Note</>}
-                  </button>
+                {/* Quick Note Input */}
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>
+                    Quick Call Note
+                  </label>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <input
+                      type="text"
+                      className="input"
+                      style={{ padding: '6px 10px', fontSize: '0.8rem', flex: 1 }}
+                      placeholder="e.g., Client confirmed 3 PM meeting..."
+                      value={quickNote}
+                      onChange={(e) => setQuickNote(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleSaveQuickNote();
+                      }}
+                    />
+                    <button
+                      className="btn btn-primary"
+                      style={{ padding: '6px 10px', fontSize: '0.78rem' }}
+                      onClick={handleSaveQuickNote}
+                    >
+                      {noteSaved ? <Check size={14} /> : <FileText size={14} />}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
           </>
         ) : (
-          <div className="standby-pill">
-            <div className="standby-dot" style={{ background: isMuted ? 'var(--accent-rose)' : 'var(--accent-green)', boxShadow: isMuted ? '0 0 6px rgba(225,29,72,0.4)' : '0 0 6px rgba(16,185,129,0.4)' }} />
-            <span>
-              {isMuted ? 'Notifications Muted' : `Listening for ${user?.name?.split(' ')[0] || 'your'} calls`}
-            </span>
-            <div className="pill-divider" />
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              {isConnected ? 'Real-Time Connected' : 'Connecting...'}
-            </span>
+          <div className="status-badge connected">
+            <div className="status-dot connected" />
+            <span>Listening for <strong>{user?.name?.split(' ')[0] || 'your'}</strong> calls</span>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Real-Time Connected</span>
           </div>
         )}
       </div>
 
-      {/* Header Actions */}
+      {/* Right Controls */}
       <div className="header-actions">
-        {/* MUTE / UNMUTE NOTIFICATION BUTTON */}
+        {/* Stealth 404 Screen Button */}
         <button
-          className={`btn ${isMuted ? 'btn-danger' : 'btn-secondary'}`}
+          className="btn btn-ghost"
+          style={{
+            background: 'var(--bg-tertiary)',
+            color: 'var(--text-secondary)',
+            border: '1px solid var(--border-color)',
+            gap: '6px'
+          }}
+          onClick={onHideDashboard}
+          title="Instantly disguise dashboard as a 404 Error Page (Unhide: Ctrl+Y -> Alt+S)"
+        >
+          <EyeOff size={15} style={{ color: 'var(--accent-rose)' }} />
+          <span>Stealth (404)</span>
+        </button>
+
+        {/* Audio Mute Toggle */}
+        <button
+          className={`btn ${isMuted ? 'btn-danger' : 'btn-ghost'}`}
           onClick={onToggleMute}
-          title={isMuted ? 'Notifications are currently MUTED (OFF). Click to Unmute.' : 'Notifications are ACTIVE (ON). Click to Mute.'}
-          style={{ fontWeight: 600 }}
+          title={isMuted ? 'Audio alerts are muted (Click to unmute)' : 'Audio alerts are active (Click to mute)'}
+          style={{ padding: '6px 10px' }}
         >
-          {isMuted ? (
-            <>
-              <VolumeX size={15} style={{ color: 'var(--accent-rose)' }} />
-              <span>Muted (Off)</span>
-            </>
-          ) : (
-            <>
-              <Volume2 size={15} style={{ color: 'var(--accent-cyan)' }} />
-              <span>Alerts (On)</span>
-            </>
-          )}
+          {isMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}
+          <span style={{ fontSize: '0.8rem' }}>{isMuted ? 'Muted' : 'Alerts (On)'}</span>
         </button>
 
-        {/* Browser Push Permission Toggle */}
+        {/* Browser Push Toggle */}
         <button
-          className={`btn ${pushEnabled ? 'btn-secondary' : 'btn-ghost'}`}
+          className={`btn ${pushEnabled ? 'btn-ghost' : 'btn-ghost'}`}
           onClick={onTogglePush}
-          title={pushEnabled ? 'Browser Desktop Push: Enabled' : 'Enable Browser Desktop Push'}
+          title={pushEnabled ? 'Push notifications active' : 'Enable browser background push'}
+          style={{ padding: '6px 10px' }}
         >
-          {pushEnabled ? <Bell size={16} style={{ color: 'var(--accent-cyan)' }} /> : <BellOff size={16} />}
+          {pushEnabled ? <Bell size={15} style={{ color: 'var(--accent-primary)' }} /> : <BellOff size={15} />}
         </button>
 
-        {/* Test Simulator Button */}
-        <button className="btn btn-secondary" onClick={onOpenSimulator} title="Simulate a test call for this user">
-          <Play size={14} style={{ color: 'var(--accent-green)' }} />
+        {/* Simulator Button */}
+        <button className="btn btn-ghost" onClick={onOpenSimulator} title="Simulate incoming & answered calls">
+          <Play size={14} />
           <span>Simulate</span>
         </button>
 
-        {/* Android Guide Button */}
-        <button className="btn btn-secondary" onClick={onOpenAndroidGuide} title="Android Phone & Webhook Setup">
-          <Smartphone size={15} style={{ color: 'var(--accent-cyan)' }} />
+        {/* Android App Button */}
+        <button className="btn btn-ghost" onClick={onOpenAndroidGuide} title="Android mobile setup instructions">
+          <Smartphone size={14} />
           <span>Android App</span>
         </button>
 
@@ -257,6 +262,19 @@ export const Header = ({
                   </button>
                 </div>
               </div>
+
+              {/* Hide to 404 Option in Menu */}
+              <button
+                className="btn btn-ghost"
+                style={{ width: '100%', marginBottom: '8px', justifyContent: 'flex-start', color: 'var(--text-secondary)' }}
+                onClick={() => {
+                  setShowUserMenu(false);
+                  onHideDashboard();
+                }}
+              >
+                <EyeOff size={14} style={{ color: 'var(--accent-rose)' }} />
+                <span>Hide as 404 (Stealth)</span>
+              </button>
 
               <button
                 className="btn btn-danger"

@@ -297,10 +297,13 @@ export function App() {
     });
   };
 
+  // If 404 Stealth Screen is active, disguise the dashboard immediately (session preserved)
+  if (show404Screen) {
+    return <Stealth404Screen onUnlock={() => setShow404Screen(false)} />;
+  }
+
+  // If not logged in, show Auth Modal
   if (!user || !token) {
-    if (show404Screen) {
-      return <Stealth404Screen onUnlock={() => setShow404Screen(false)} />;
-    }
     return <AuthModal onLoginSuccess={handleLoginSuccess} />;
   }
 
@@ -310,6 +313,7 @@ export function App() {
       <Header
         user={user}
         onLogout={handleLogout}
+        onHideDashboard={() => setShow404Screen(true)}
         activeCall={activeCall}
         isConnected={isConnected}
         onOpenSimulator={() => setShowSimulator(true)}
