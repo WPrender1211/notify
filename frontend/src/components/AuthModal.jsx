@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { PhoneIncoming, Lock, Mail, User, KeyRound, ArrowRight, ShieldCheck, Server, Check } from 'lucide-react';
-import { getApiBaseUrl, setApiBaseUrl } from '../config';
+import { PhoneIncoming, Lock, Mail, User, KeyRound, ArrowRight, ShieldCheck } from 'lucide-react';
+import { getApiBaseUrl } from '../config';
 
 export const AuthModal = ({ onLoginSuccess }) => {
   const [isRegister, setIsRegister] = useState(false);
@@ -11,24 +11,13 @@ export const AuthModal = ({ onLoginSuccess }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Server API URL Configuration
-  const [customApiUrl, setCustomApiUrl] = useState(() => getApiBaseUrl());
-  const [showServerConfig, setShowServerConfig] = useState(false);
-  const [serverSaved, setServerSaved] = useState(false);
-
-  const handleSaveServerUrl = () => {
-    setApiBaseUrl(customApiUrl);
-    setServerSaved(true);
-    setError('');
-    setTimeout(() => setServerSaved(false), 2000);
-  };
+  const apiBase = getApiBaseUrl();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    const apiBase = getApiBaseUrl();
     const endpoint = `${apiBase}${isRegister ? '/api/auth/register' : '/api/auth/login'}`;
     const payload = isRegister
       ? { name, email, password, securityKey }
@@ -51,12 +40,10 @@ export const AuthModal = ({ onLoginSuccess }) => {
         data = await res.json();
       } else {
         const text = await res.text();
-        if (text.startsWith('<!DOCTYPE') || text.includes('<html')) {
-          setShowServerConfig(true);
-          throw new Error('Cannot reach Node.js Backend API. If hosted on Hostinger, please enter your Backend Server URL below.');
-        }
-        try { data = JSON.parse(text); } catch (e) {
-          throw new Error('Invalid response from server.');
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          throw new Error('Server connection error. Please try again in a moment.');
         }
       }
 
@@ -228,48 +215,6 @@ export const AuthModal = ({ onLoginSuccess }) => {
             <ArrowRight size={16} />
           </button>
         </form>
-
-        {/* Server API URL Configuration Accordion (For Hostinger -> Remote Backend Split Deploy) */}
-        <div style={{ marginTop: '20px', borderTop: '1px solid var(--border-color)', paddingTop: '14px', textAlign: 'center' }}>
-          <button
-            type="button"
-            className="btn btn-ghost"
-            style={{ fontSize: '0.78rem', padding: '4px 8px', margin: '0 auto', color: 'var(--text-muted)' }}
-            onClick={() => setShowServerConfig(!showServerConfig)}
-          >
-            <Server size={13} />
-            <span>{showServerConfig ? 'Hide Backend Settings' : '⚙️ Configure Backend Server URL'}</span>
-          </button>
-
-          {showServerConfig && (
-            <div style={{ marginTop: '12px', textAlign: 'left', background: 'var(--bg-tertiary)', padding: '12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
-              <label className="form-label" style={{ fontSize: '0.75rem' }}>
-                Remote Node.js Backend API URL:
-              </label>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <input
-                  type="text"
-                  className="input"
-                  style={{ fontSize: '0.8rem', padding: '6px 10px' }}
-                  placeholder="https://callnotify-hub.onrender.com"
-                  value={customApiUrl}
-                  onChange={(e) => setCustomApiUrl(e.target.value)}
-                />
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  style={{ padding: '6px 12px', fontSize: '0.8rem', flexShrink: 0 }}
-                  onClick={handleSaveServerUrl}
-                >
-                  {serverSaved ? <Check size={14} /> : 'Save'}
-                </button>
-              </div>
-              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '5px', display: 'block' }}>
-                Enter your live Render or VPS backend URL if hosted on Hostinger. Leave empty if local.
-              </span>
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );

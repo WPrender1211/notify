@@ -7,6 +7,7 @@ class AppPreferences(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("call_notifier_prefs", Context.MODE_PRIVATE)
 
     companion object {
+        const val DEFAULT_SERVER_URL = "https://notify-uvff.onrender.com"
         private const val KEY_SERVER_URL = "server_url"
         private const val KEY_USER_TOKEN = "user_token"
         private const val KEY_USER_NAME = "user_name"
@@ -17,7 +18,7 @@ class AppPreferences(context: Context) {
     }
 
     var serverUrl: String
-        get() = prefs.getString(KEY_SERVER_URL, "https://callnotify-hub.onrender.com") ?: "https://callnotify-hub.onrender.com"
+        get() = prefs.getString(KEY_SERVER_URL, DEFAULT_SERVER_URL) ?: DEFAULT_SERVER_URL
         set(value) = prefs.edit().putString(KEY_SERVER_URL, value.trim().removeSuffix("/")).apply()
 
     var userToken: String

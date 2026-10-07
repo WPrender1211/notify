@@ -23,7 +23,6 @@ class MainActivity : AppCompatActivity() {
 
     // Login View
     private lateinit var layoutLogin: LinearLayout
-    private lateinit var etServerUrl: EditText
     private lateinit var etEmail: EditText
     private lateinit var etPassword: EditText
     private lateinit var btnLogin: Button
@@ -71,7 +70,6 @@ class MainActivity : AppCompatActivity() {
 
         // Bind Views
         layoutLogin = findViewById(R.id.layoutLogin)
-        etServerUrl = findViewById(R.id.etServerUrl)
         etEmail = findViewById(R.id.etEmail)
         etPassword = findViewById(R.id.etPassword)
         btnLogin = findViewById(R.id.btnLogin)
@@ -86,23 +84,20 @@ class MainActivity : AppCompatActivity() {
         btnLogout = findViewById(R.id.btnLogout)
         tvLogs = findViewById(R.id.tvLogs)
 
-        etServerUrl.setText(prefs.serverUrl)
-
-        // Login Action
+        // Login Action (Zero URL prompt needed)
         btnLogin.setOnClickListener {
-            val server = etServerUrl.text.toString().trim()
+            val server = prefs.serverUrl
             val email = etEmail.text.toString().trim()
             val pass = etPassword.text.toString().trim()
 
-            if (server.isBlank() || email.isBlank() || pass.isBlank()) {
-                Toast.makeText(this, "Please fill in Server URL, Email, and Password", Toast.LENGTH_SHORT).show()
+            if (email.isBlank() || pass.isBlank()) {
+                Toast.makeText(this, "Please enter your Email and Password", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            prefs.serverUrl = server
             btnLogin.isEnabled = false
-            btnLogin.text = "Authenticating..."
-            appendLog("🔐 Authenticating with $server...")
+            btnLogin.text = "Signing In..."
+            appendLog("🔐 Signing in as $email...")
 
             CoroutineScope(Dispatchers.Main).launch {
                 val (success, session) = ApiClient.login(server, email, pass)
@@ -111,7 +106,7 @@ class MainActivity : AppCompatActivity() {
 
                 if (success && session != null) {
                     prefs.saveLogin(session.token, session.name, session.email, session.apiKey)
-                    appendLog("✅ Logged in as ${session.name}! API Key auto-fetched.")
+                    appendLog("✅ Connected as ${session.name}! Ready to forward calls.")
                     Toast.makeText(this@MainActivity, "Connected as ${session.name}", Toast.LENGTH_SHORT).show()
 
                     if (hasPermissions()) {
@@ -121,8 +116,8 @@ class MainActivity : AppCompatActivity() {
                     }
                     updateScreens()
                 } else {
-                    appendLog("❌ Login failed. Check your Server URL, Email, or Password.")
-                    Toast.makeText(this@MainActivity, "Invalid credentials or Server URL", Toast.LENGTH_LONG).show()
+                    appendLog("❌ Sign in failed. Please verify your Email or Password.")
+                    Toast.makeText(this@MainActivity, "Invalid credentials", Toast.LENGTH_LONG).show()
                 }
             }
         }
@@ -145,12 +140,12 @@ class MainActivity : AppCompatActivity() {
 
         // Send Test Call Event
         btnSendTestCall.setOnClickListener {
-            appendLog("📡 Sending test call alert to dashboard...")
+            appendLog("📡 Sending test call alert to web dashboard...")
             CoroutineScope(Dispatchers.Main).launch {
                 val success = ApiClient.sendCallEvent(
                     serverUrl = prefs.serverUrl,
                     number = "+1 (555) 019-9234",
-                    name = "Test Caller",
+                    name = "VIP Client",
                     state = "RINGING",
                     device = prefs.deviceName,
                     apiKey = prefs.apiKey
@@ -159,7 +154,7 @@ class MainActivity : AppCompatActivity() {
                     appendLog("✅ Test call event delivered to dashboard!")
                     Toast.makeText(this@MainActivity, "Test call sent to dashboard!", Toast.LENGTH_SHORT).show()
                 } else {
-                    appendLog("❌ Failed to deliver test call. Check server connection.")
+                    appendLog("❌ Failed to deliver test call. Check internet connection.")
                 }
             }
         }
@@ -168,7 +163,7 @@ class MainActivity : AppCompatActivity() {
         btnLogout.setOnClickListener {
             CallForegroundService.stop(this)
             prefs.logout()
-            appendLog("🔒 Signed out. Credentials cleared.")
+            appendLog("🔒 Signed out.")
             updateScreens()
         }
 
@@ -205,7 +200,7 @@ class MainActivity : AppCompatActivity() {
 
             tvUserName.text = prefs.userName
             tvUserEmail.text = prefs.userEmail
-            tvConnectedServer.text = "Server: ${prefs.serverUrl}"
+            tvConnectedServer.text = "Cloud Relay: Connected"
 
             if (prefs.isServiceRunning) {
                 tvStatus.text = "● Service Active & Forwarding Calls"

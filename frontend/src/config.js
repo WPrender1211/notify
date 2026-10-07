@@ -1,31 +1,22 @@
 // Dynamic API URL resolver for local development or Hostinger -> Render split hosting
 export const getApiBaseUrl = () => {
-  // 1. Check window global config (can be set in index.html on Hostinger)
-  if (typeof window !== 'undefined' && window.__API_URL__) {
-    return window.__API_URL__.replace(/\/$/, '');
-  }
+  // 1. Built-in Production Backend URL (Render Live Backend)
+  const PRODUCTION_BACKEND_URL = 'https://notify-uvff.onrender.com';
 
-  // 2. Check localStorage override
+  // If running on localhost / development, check window or env, else default to live backend
   if (typeof window !== 'undefined') {
-    const saved = localStorage.getItem('call_notify_api_url');
-    if (saved) return saved.replace(/\/$/, '');
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      if (window.__API_URL__) return window.__API_URL__.replace(/\/$/, '');
+      if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL.replace(/\/$/, '');
+      return '';
+    }
   }
 
-  // 3. Check Vite Environment variable
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL.replace(/\/$/, '');
-  }
-
-  // 4. Default to same origin (local or all-in-one deploy)
-  return '';
+  return PRODUCTION_BACKEND_URL;
 };
 
 export const setApiBaseUrl = (url) => {
-  if (typeof window !== 'undefined') {
-    if (url) {
-      localStorage.setItem('call_notify_api_url', url.trim().replace(/\/$/, ''));
-    } else {
-      localStorage.removeItem('call_notify_api_url');
-    }
+  if (typeof window !== 'undefined' && url) {
+    localStorage.setItem('call_notify_api_url', url.trim().replace(/\/$/, ''));
   }
 };
