@@ -66,7 +66,7 @@ export function App() {
     localStorage.removeItem('call_notify_token');
   };
 
-  // Authenticated fetch helper
+  // Authenticated fetch helper (with persistent session protection)
   const authFetch = useCallback(async (url, options = {}) => {
     if (!token) return null;
     const fullUrl = url.startsWith('http') ? url : `${apiBase}${url}`;
@@ -75,12 +75,16 @@ export function App() {
       Authorization: `Bearer ${token}`,
       ...options.headers
     };
-    const res = await fetch(fullUrl, { ...options, headers });
-    if (res.status === 401) {
-      handleLogout();
+    try {
+      const res = await fetch(fullUrl, { ...options, headers });
+      if (!res.ok) {
+        return null;
+      }
+      return res.json();
+    } catch (err) {
+      console.warn('Network fetch warning:', err.message);
       return null;
     }
-    return res.json();
   }, [token, apiBase]);
 
   // Fetch initial data for logged in user
