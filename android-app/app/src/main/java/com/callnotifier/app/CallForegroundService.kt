@@ -26,17 +26,25 @@ class CallForegroundService : Service() {
         private const val TAG = "CallForegroundService"
 
         fun start(context: Context) {
-            val intent = Intent(context, CallForegroundService::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
-                context.startService(intent)
+            try {
+                val intent = Intent(context, CallForegroundService::class.java)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(intent)
+                } else {
+                    context.startService(intent)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to start CallForegroundService: ${e.message}")
             }
         }
 
         fun stop(context: Context) {
-            val intent = Intent(context, CallForegroundService::class.java)
-            context.stopService(intent)
+            try {
+                val intent = Intent(context, CallForegroundService::class.java)
+                context.stopService(intent)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to stop CallForegroundService: ${e.message}")
+            }
         }
     }
 
@@ -60,58 +68,55 @@ class CallForegroundService : Service() {
     }
 
     private fun startForegroundWithNotification() {
-        val pendingIntent = PendingIntent.getActivity(
-            this,
-            0,
-            Intent(this, MainActivity::class.java),
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
+        try {
+            val pendingIntent = PendingIntent.getActivity(
+                this,
+                0,
+                Intent(this, MainActivity::class.java),
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
 
-        val notification: Notification = NotificationCompat.Builder(this, CallNotifierApp.CHANNEL_ID)
-            .setContentTitle("Call Notifier Active")
-            .setContentText("Listening for incoming calls & dispatching alerts to web")
-            .setSmallIcon(android.R.drawable.sym_call_incoming)
-            .setContentIntent(pendingIntent)
-            .setOngoing(true)
-            .build()
+            val notification: Notification = NotificationCompat.Builder(this, CallNotifierApp.CHANNEL_ID)
+                .setContentTitle("Call Notifier Active")
+                .setContentText("Listening for incoming calls & dispatching alerts to web")
+                .setSmallIcon(android.R.drawable.sym_call_incoming)
+                .setContentIntent(pendingIntent)
+                .setOngoing(true)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .build()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
             } else {
-                startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL)
+                startForeground(NOTIFICATION_ID, notification)
             }
-        } else {
-            startForeground(NOTIFICATION_ID, notification)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in startForegroundWithNotification: ${e.message}")
         }
     }
 
     private fun registerPhoneListener() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val callback = object : TelephonyCallback(), TelephonyCallback.CallStateListener {
-                override fun onCallStateChanged(state: Int) {
-                    handleCallStateChange(state, null)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val callback = object : TelephonyCallback(), TelephonyCallback.CallStateListener {
+                    override fun onCallStateChanged(state: Int) {
+                        handleCallStateChange(state, null)
+                    }
                 }
-            }
-            try {
                 telephonyManager.registerTelephonyCallback(mainExecutor, callback)
-            } catch (e: SecurityException) {
-                Log.e(TAG, "SecurityException registering TelephonyCallback: ${e.message}")
-            }
-        } else {
-            @Suppress("DEPRECATION")
-            val listener = object : PhoneStateListener() {
-                @Deprecated("Deprecated in Java")
-                override fun onCallStateChanged(state: Int, incomingNumber: String?) {
-                    handleCallStateChange(state, incomingNumber)
+            } else {
+                @Suppress("DEPRECATION")
+                val listener = object : PhoneStateListener() {
+                    @Deprecated("Deprecated in Java")
+                    override fun onCallStateChanged(state: Int, incomingNumber: String?) {
+                        handleCallStateChange(state, incomingNumber)
+                    }
                 }
-            }
-            try {
                 @Suppress("DEPRECATION")
                 telephonyManager.listen(listener, PhoneStateListener.LISTEN_CALL_STATE)
-            } catch (e: SecurityException) {
-                Log.e(TAG, "SecurityException registering PhoneStateListener: ${e.message}")
             }
+        } catch (e: Exception) {
+            Log.e(TAG, "Exception registering Telephony listener: ${e.message}")
         }
     }
 
@@ -152,28 +157,47 @@ class CallForegroundService : Service() {
                 savedNumber = null
             }
         }
+
         lastState = state
     }
 
     private fun dispatchCallEvent(number: String, name: String, state: String) {
         serviceScope.launch {
-            ApiClient.sendCallEvent(
-                serverUrl = prefs.serverUrl,
-                number = number,
-                name = name,
-                state = state,
-                device = prefs.deviceName,
-                apiKey = prefs.apiKey
-            )
+            try {
+                val serverUrl = prefs.serverUrl
+                val deviceName = prefs.deviceName
+                val apiKey = prefs.apiKey
+
+                Log.d(TAG, "Dispatching $state event to $serverUrl for $number ($name)")
+                val success = ApiClient.sendCallEvent(
+                    serverUrl = serverUrl,
+                    number = number,
+                    name = name,
+                    state = state,
+                    device = deviceName,
+                    apiKey = apiKey
+                )
+                if (success) {
+                    Log.d(TAG, "Event $state successfully dispatched to server.")
+                } else {
+                    Log.w(TAG, "Event $state delivery reported non-success.")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to dispatch call event: ${e.message}")
+            }
         }
     }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        return START_STICKY
+    }
+
+    override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
         super.onDestroy()
         prefs.isServiceRunning = false
         serviceScope.cancel()
-        Log.d(TAG, "CallForegroundService destroyed.")
+        Log.d(TAG, "CallForegroundService stopped.")
     }
-
-    override fun onBind(intent: Intent?): IBinder? = null
 }

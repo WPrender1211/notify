@@ -9,8 +9,7 @@
     <uses-permission android:name="android.permission.READ_CALL_LOG" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" tools:node="merge" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" tools:node="merge" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
@@ -35,12 +34,12 @@
             </intent-filter>
         </activity>
 
-        <!-- Foreground Service -->
+        <!-- Foreground Service with standard dataSync -->
         <service
             android:name=".CallForegroundService"
             android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="phoneCall|dataSync" />
+            android:foregroundServiceType="dataSync" />
 
         <!-- Broadcast Receiver for Call State -->
         <receiver
