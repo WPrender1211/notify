@@ -1,0 +1,145 @@
+{
+  "calls": [
+    {
+      "id": "215659c8-401d-48ac-aba8-f50b98d9b652",
+      "userId": "186cc906-b5ec-4878-ab07-faae57893a96",
+      "number": "+1 (555) 999-8888",
+      "name": "Client X",
+      "company": "",
+      "tag": "",
+      "state": "RINGING",
+      "type": "INCOMING",
+      "duration": 0,
+      "timestamp": "2026-10-07T11:43:40.456Z",
+      "notes": "",
+      "device": "Test Phone"
+    },
+    {
+      "id": "75b7943d-f39e-4390-b147-0d64d1f95299",
+      "number": "+1 (555) 349-8812",
+      "name": "Elena Rostova",
+      "company": "",
+      "tag": "",
+      "state": "ENDED",
+      "type": "INCOMING",
+      "duration": 18,
+      "timestamp": "2026-10-07T11:36:11.170Z",
+      "notes": "",
+      "device": "Test Device",
+      "updatedAt": "2026-10-07T11:36:20.112Z"
+    },
+    {
+      "id": "demo-call-1",
+      "number": "+1 (555) 234-5678",
+      "name": "Sarah Jenkins",
+      "company": "Acme Corp",
+      "state": "ENDED",
+      "type": "INCOMING",
+      "duration": 142,
+      "timestamp": "2026-10-07T11:00:44.504Z",
+      "notes": "Discussed project milestones and timeline review.",
+      "device": "Pixel 8 Pro"
+    },
+    {
+      "id": "demo-call-2",
+      "number": "+1 (555) 890-1234",
+      "name": "Michael Chang",
+      "company": "Apex Logistics",
+      "state": "MISSED",
+      "type": "INCOMING",
+      "duration": 0,
+      "timestamp": "2026-10-07T09:35:44.505Z",
+      "notes": "Callback requested regarding shipping contract.",
+      "device": "Pixel 8 Pro"
+    },
+    {
+      "id": "demo-call-3",
+      "number": "+1 (555) 432-9876",
+      "name": "Unknown Caller",
+      "company": "",
+      "state": "ENDED",
+      "type": "INCOMING",
+      "duration": 45,
+      "timestamp": "2026-10-07T05:35:44.505Z",
+      "notes": "",
+      "device": "Pixel 8 Pro"
+    }
+  ],
+  "contacts": [
+    {
+      "id": "contact-1",
+      "name": "Sarah Jenkins",
+      "number": "+15552345678",
+      "formattedNumber": "+1 (555) 234-5678",
+      "company": "Acme Corp",
+      "email": "sarah@acme.com",
+      "tag": "VIP Client",
+      "notes": "Key stakeholder for Q4 renewal."
+    },
+    {
+      "id": "contact-2",
+      "name": "Michael Chang",
+      "number": "+15558901234",
+      "formattedNumber": "+1 (555) 890-1234",
+      "company": "Apex Logistics",
+      "email": "mchang@apexlogistics.io",
+      "tag": "Partner",
+      "notes": "Logistics coordinator."
+    },
+    {
+      "id": "contact-3",
+      "name": "David Miller",
+      "number": "+15557890123",
+      "formattedNumber": "+1 (555) 789-0123",
+      "company": "FinTech Solutions",
+      "email": "david.m@fintech.dev",
+      "tag": "Vendor",
+      "notes": "Infrastructure provider."
+    }
+  ],
+  "pushSubscriptions": [
+    {
+      "endpoint": "https://wns2-pn1p.notify.windows.com/w/?token=BQYAAADFTVgVPMcpJy5%2fTbNwCvEME0aC26BrWT6%2fTY6kO5GxJ41mhiuBS50u4jgLe1hTo0WIOSgrnA04btp4%2b%2boauioUoMv%2fk3FU%2frXObynJp6Ej5mU1OdoNzrYVKco%2brRGYFjp5e5PqGK3jIAlFm%2fDIlb77i2wzHK0qwfbjLwtomce125E%2b9AvV8U3OvOy8YJ7FmUFG2kwS9AP3JmR%2bUP2E4JvPf6KHyv5n4nY3LX%2f8%2bFA91Kc8aiFZazNv4Ct15QTK2rkkglQZBwpCvL8bdPgzdw%2fIe54038rEQK1Clx587jW9wv7Q0h8bjNK9D53kuUhffIo%3d",
+      "expirationTime": null,
+      "keys": {
+        "p256dh": "BFcLee72ug155I8_FDhkVhia84-vHOvphr3pxMDZ6C1Cj9oNndRUMHosc-h136Q2PfGPZkW9cw4SOWosmkFP0QA",
+        "auth": "2mix1FjaVum7JuvjlShVyQ"
+      },
+      "userId": "user-1"
+    }
+  ],
+  "settings": {
+    "apiKey": "secret-call-token-123",
+    "requireApiKey": false,
+    "enableWebPush": true
+  },
+  "users": [
+    {
+      "id": "user-1",
+      "name": "Alex Walker",
+      "email": "alex@example.com",
+      "passwordHash": "$2b$10$cczvyohnnTXfxOLhRFqKEec9uqQN.TaDq0QR7JpWxNFdVPz/OW0xC",
+      "apiKey": "usr_key_alex_9481a8b7",
+      "role": "user",
+      "createdAt": "2026-09-30T11:41:19.117Z"
+    },
+    {
+      "id": "user-2",
+      "name": "Sarah Jenkins",
+      "email": "sarah@example.com",
+      "passwordHash": "$2b$10$cczvyohnnTXfxOLhRFqKEec9uqQN.TaDq0QR7JpWxNFdVPz/OW0xC",
+      "apiKey": "usr_key_sarah_51c3d90e",
+      "role": "user",
+      "createdAt": "2026-10-02T11:41:19.117Z"
+    },
+    {
+      "id": "186cc906-b5ec-4878-ab07-faae57893a96",
+      "name": "Test User",
+      "email": "testuser@example.com",
+      "passwordHash": "$2b$10$VSvt29b.1jVLA9rYlvyIvesc9cj3xfch8.r6fiHz08uh5qfaV3v0m",
+      "apiKey": "usr_key_afa624613870e9f7",
+      "role": "user",
+      "createdAt": "2026-10-07T11:43:31.714Z"
+    }
+  ]
+}
