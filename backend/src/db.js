@@ -221,13 +221,14 @@ export const db = {
   },
 
   async addCall(callData) {
+    const uid = callData.userId || callData.user_id;
     const dateVal = callData.timestamp ? new Date(callData.timestamp) : new Date();
     await pool.query(`
       INSERT INTO calls (id, user_id, number, name, company, tag, state, type, duration, notes, timestamp, device)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       callData.id,
-      callData.userId,
+      uid,
       callData.number,
       callData.name || 'Unknown Caller',
       callData.company || '',
@@ -239,7 +240,7 @@ export const db = {
       dateVal,
       callData.device || 'Android Device'
     ]);
-    return callData;
+    return { ...callData, userId: uid };
   },
 
   async updateCall(callId, updates, userId) {

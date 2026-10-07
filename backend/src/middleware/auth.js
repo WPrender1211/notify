@@ -4,7 +4,7 @@ import { db } from '../db.js';
 export const JWT_SECRET = process.env.JWT_SECRET || 'call-notifier-super-jwt-secret-key-2026';
 
 // Middleware for web sessions (Bearer JWT token)
-export const requireAuth = (req, res, next) => {
+export const requireAuth = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -14,7 +14,7 @@ export const requireAuth = (req, res, next) => {
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, JWT_SECRET);
 
-    const user = db.findUserById(decoded.id);
+    const user = await db.findUserById(decoded.id);
     if (!user) {
       return res.status(401).json({ error: 'Unauthorized: User not found' });
     }
