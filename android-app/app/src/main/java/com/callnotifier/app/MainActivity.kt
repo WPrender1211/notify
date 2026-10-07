@@ -4,8 +4,10 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -18,12 +20,24 @@ import kotlinx.coroutines.launch
 class MainActivity : AppCompatActivity() {
 
     private lateinit var prefs: AppPreferences
+
+    // Login View
+    private lateinit var layoutLogin: LinearLayout
     private lateinit var etServerUrl: EditText
-    private lateinit var etApiKey: EditText
-    private lateinit var etDeviceName: EditText
-    private lateinit var btnToggleService: Button
-    private lateinit var btnTestConnection: Button
+    private lateinit var etEmail: EditText
+    private lateinit var etPassword: EditText
+    private lateinit var btnLogin: Button
+
+    // Connected View
+    private lateinit var layoutConnected: LinearLayout
+    private lateinit var tvUserName: TextView
+    private lateinit var tvUserEmail: TextView
     private lateinit var tvStatus: TextView
+    private lateinit var tvConnectedServer: TextView
+    private lateinit var btnToggleService: Button
+    private lateinit var btnSendTestCall: Button
+    private lateinit var btnLogout: Button
+
     private lateinit var tvLogs: TextView
 
     private val requiredPermissions = buildList {
@@ -40,10 +54,12 @@ class MainActivity : AppCompatActivity() {
     ) { results ->
         val allGranted = results.values.all { it }
         if (allGranted) {
-            appendLog("✅ All permissions granted successfully.")
-            updateUiState()
+            appendLog("✅ Phone & Call permissions granted.")
+            if (prefs.isLoggedIn && !prefs.isServiceRunning) {
+                startServiceInternal()
+            }
         } else {
-            appendLog("⚠️ Some permissions were denied. Call monitoring may not work.")
+            appendLog("⚠️ Some permissions were denied. Call detection may be limited.")
         }
     }
 
@@ -53,63 +69,123 @@ class MainActivity : AppCompatActivity() {
 
         prefs = AppPreferences(this)
 
+        // Bind Views
+        layoutLogin = findViewById(R.id.layoutLogin)
         etServerUrl = findViewById(R.id.etServerUrl)
-        etApiKey = findViewById(R.id.etApiKey)
-        etDeviceName = findViewById(R.id.etDeviceName)
-        btnToggleService = findViewById(R.id.btnToggleService)
-        btnTestConnection = findViewById(R.id.btnTestConnection)
+        etEmail = findViewById(R.id.etEmail)
+        etPassword = findViewById(R.id.etPassword)
+        btnLogin = findViewById(R.id.btnLogin)
+
+        layoutConnected = findViewById(R.id.layoutConnected)
+        tvUserName = findViewById(R.id.tvUserName)
+        tvUserEmail = findViewById(R.id.tvUserEmail)
         tvStatus = findViewById(R.id.tvStatus)
+        tvConnectedServer = findViewById(R.id.tvConnectedServer)
+        btnToggleService = findViewById(R.id.btnToggleService)
+        btnSendTestCall = findViewById(R.id.btnSendTestCall)
+        btnLogout = findViewById(R.id.btnLogout)
         tvLogs = findViewById(R.id.tvLogs)
 
-        // Populate fields
         etServerUrl.setText(prefs.serverUrl)
-        etApiKey.setText(prefs.apiKey)
-        etDeviceName.setText(prefs.deviceName)
 
-        btnToggleService.setOnClickListener {
-            saveInputs()
-            if (!hasPermissions()) {
-                requestRequiredPermissions()
+        // Login Action
+        btnLogin.setOnClickListener {
+            val server = etServerUrl.text.toString().trim()
+            val email = etEmail.text.toString().trim()
+            val pass = etPassword.text.toString().trim()
+
+            if (server.isBlank() || email.isBlank() || pass.isBlank()) {
+                Toast.makeText(this, "Please fill in Server URL, Email, and Password", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            if (prefs.isServiceRunning) {
-                CallForegroundService.stop(this)
-                prefs.isServiceRunning = false
-                appendLog("⏹️ Background Service stopped.")
-            } else {
-                CallForegroundService.start(this)
-                prefs.isServiceRunning = true
-                appendLog("▶️ Background Service started.")
-            }
-            updateUiState()
-        }
+            prefs.serverUrl = server
+            btnLogin.isEnabled = false
+            btnLogin.text = "Authenticating..."
+            appendLog("🔐 Authenticating with $server...")
 
-        btnTestConnection.setOnClickListener {
-            saveInputs()
-            appendLog("📡 Testing connection to ${prefs.serverUrl}...")
             CoroutineScope(Dispatchers.Main).launch {
-                val (success, message) = ApiClient.testConnection(prefs.serverUrl)
-                if (success) {
-                    appendLog("✅ $message")
-                    Toast.makeText(this@MainActivity, message, Toast.LENGTH_SHORT).show()
+                val (success, session) = ApiClient.login(server, email, pass)
+                btnLogin.isEnabled = true
+                btnLogin.text = "Sign In & Connect Phone"
+
+                if (success && session != null) {
+                    prefs.saveLogin(session.token, session.name, session.email, session.apiKey)
+                    appendLog("✅ Logged in as ${session.name}! API Key auto-fetched.")
+                    Toast.makeText(this@MainActivity, "Connected as ${session.name}", Toast.LENGTH_SHORT).show()
+
+                    if (hasPermissions()) {
+                        startServiceInternal()
+                    } else {
+                        requestRequiredPermissions()
+                    }
+                    updateScreens()
                 } else {
-                    appendLog("❌ $message")
-                    Toast.makeText(this@MainActivity, message, Toast.LENGTH_LONG).show()
+                    appendLog("❌ Login failed. Check your Server URL, Email, or Password.")
+                    Toast.makeText(this@MainActivity, "Invalid credentials or Server URL", Toast.LENGTH_LONG).show()
                 }
             }
         }
 
-        updateUiState()
-        if (!hasPermissions()) {
+        // Service Toggle Action
+        btnToggleService.setOnClickListener {
+            if (prefs.isServiceRunning) {
+                CallForegroundService.stop(this)
+                prefs.isServiceRunning = false
+                appendLog("⏹️ Background Service paused.")
+            } else {
+                if (hasPermissions()) {
+                    startServiceInternal()
+                } else {
+                    requestRequiredPermissions()
+                }
+            }
+            updateScreens()
+        }
+
+        // Send Test Call Event
+        btnSendTestCall.setOnClickListener {
+            appendLog("📡 Sending test call alert to dashboard...")
+            CoroutineScope(Dispatchers.Main).launch {
+                val success = ApiClient.sendCallEvent(
+                    serverUrl = prefs.serverUrl,
+                    number = "+1 (555) 019-9234",
+                    name = "Test Caller",
+                    state = "RINGING",
+                    device = prefs.deviceName,
+                    apiKey = prefs.apiKey
+                )
+                if (success) {
+                    appendLog("✅ Test call event delivered to dashboard!")
+                    Toast.makeText(this@MainActivity, "Test call sent to dashboard!", Toast.LENGTH_SHORT).show()
+                } else {
+                    appendLog("❌ Failed to deliver test call. Check server connection.")
+                }
+            }
+        }
+
+        // Logout Action
+        btnLogout.setOnClickListener {
+            CallForegroundService.stop(this)
+            prefs.logout()
+            appendLog("🔒 Signed out. Credentials cleared.")
+            updateScreens()
+        }
+
+        updateScreens()
+
+        if (prefs.isLoggedIn && !hasPermissions()) {
             requestRequiredPermissions()
+        } else if (prefs.isLoggedIn && !prefs.isServiceRunning) {
+            startServiceInternal()
+            updateScreens()
         }
     }
 
-    private fun saveInputs() {
-        prefs.serverUrl = etServerUrl.text.toString().trim()
-        prefs.apiKey = etApiKey.text.toString().trim()
-        prefs.deviceName = etDeviceName.text.toString().trim()
+    private fun startServiceInternal() {
+        CallForegroundService.start(this)
+        prefs.isServiceRunning = true
+        appendLog("▶️ Background Call Monitoring is ACTIVE.")
     }
 
     private fun hasPermissions(): Boolean {
@@ -122,15 +198,27 @@ class MainActivity : AppCompatActivity() {
         permissionLauncher.launch(requiredPermissions.toTypedArray())
     }
 
-    private fun updateUiState() {
-        if (prefs.isServiceRunning) {
-            tvStatus.text = "● Active & Listening"
-            tvStatus.setTextColor(ContextCompat.getColor(this, android.R.color.holo_green_dark))
-            btnToggleService.text = "Stop Background Service"
+    private fun updateScreens() {
+        if (prefs.isLoggedIn) {
+            layoutLogin.visibility = View.GONE
+            layoutConnected.visibility = View.VISIBLE
+
+            tvUserName.text = prefs.userName
+            tvUserEmail.text = prefs.userEmail
+            tvConnectedServer.text = "Server: ${prefs.serverUrl}"
+
+            if (prefs.isServiceRunning) {
+                tvStatus.text = "● Service Active & Forwarding Calls"
+                tvStatus.setTextColor(ContextCompat.getColor(this, android.R.color.holo_green_dark))
+                btnToggleService.text = "Pause Background Service"
+            } else {
+                tvStatus.text = "○ Service Paused"
+                tvStatus.setTextColor(ContextCompat.getColor(this, android.R.color.holo_red_dark))
+                btnToggleService.text = "Resume Background Service"
+            }
         } else {
-            tvStatus.text = "○ Stopped"
-            tvStatus.setTextColor(ContextCompat.getColor(this, android.R.color.holo_red_dark))
-            btnToggleService.text = "Start Background Service"
+            layoutLogin.visibility = View.VISIBLE
+            layoutConnected.visibility = View.GONE
         }
     }
 

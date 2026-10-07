@@ -3,7 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0A0D14"
+    android:background="#F8FAFC"
+    android:fillViewport="true"
     android:padding="20dp"
     tools:context=".MainActivity">
 
@@ -12,151 +13,270 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Header Title -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Call Notifier"
-            android:textColor="#FFFFFF"
-            android:textSize="24sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="Real-Time Web Relay Companion"
-            android:textColor="#94A3B8"
-            android:textSize="13sp" />
-
-        <!-- Status Card -->
+        <!-- App Brand Header -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:background="#161C2A"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Service Status"
-                android:textColor="#94A3B8"
-                android:textSize="12sp"
+                android:text="📞 CallNotify"
+                android:textColor="#0F172A"
+                android:textSize="22sp"
                 android:textStyle="bold" />
 
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
             <TextView
-                android:id="@+id/tvStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="○ Stopped"
-                android:textColor="#F43F5E"
-                android:textSize="16sp"
+                android:background="#EFF6FF"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="4dp"
+                android:text="Android 4G/5G"
+                android:textColor="#2563EB"
+                android:textSize="11sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- Configuration Inputs -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="Server Webhook URL"
-            android:textColor="#CBD5E1"
-            android:textSize="13sp"
-            android:textStyle="bold" />
+            android:layout_marginTop="2dp"
+            android:text="Real-Time Mobile Call Relay Service"
+            android:textColor="#64748B"
+            android:textSize="12sp" />
 
-        <EditText
-            android:id="@+id/etServerUrl"
+        <!-- 1. SIGN IN SCREEN (Visible when not logged in) -->
+        <LinearLayout
+            android:id="@+id/layoutLogin"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:background="#161C2A"
-            android:hint="http://192.168.1.X:5000/api/calls/event"
-            android:inputType="textUri"
-            android:padding="12dp"
-            android:textColor="#38BDF8"
-            android:textColorHint="#475569"
-            android:textSize="13sp" />
+            android:layout_marginTop="20dp"
+            android:background="#FFFFFF"
+            android:elevation="2dp"
+            android:orientation="vertical"
+            android:padding="18dp">
 
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Sign In with Dashboard Account"
+                android:textColor="#0F172A"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Use the same email &amp; password as your web dashboard"
+                android:textColor="#64748B"
+                android:textSize="11sp" />
+
+            <!-- Server URL -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Server URL"
+                android:textColor="#334155"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/etServerUrl"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:background="#F1F5F9"
+                android:hint="https://your-backend.onrender.com"
+                android:inputType="textUri"
+                android:padding="10dp"
+                android:textColor="#0F172A"
+                android:textColorHint="#94A3B8"
+                android:textSize="13sp" />
+
+            <!-- Email / Username -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Email or Username"
+                android:textColor="#334155"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/etEmail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:background="#F1F5F9"
+                android:hint="yash@example.com"
+                android:inputType="textEmailAddress"
+                android:padding="10dp"
+                android:textColor="#0F172A"
+                android:textColorHint="#94A3B8"
+                android:textSize="13sp" />
+
+            <!-- Password -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Password"
+                android:textColor="#334155"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/etPassword"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:background="#F1F5F9"
+                android:hint="••••••••"
+                android:inputType="textPassword"
+                android:padding="10dp"
+                android:textColor="#0F172A"
+                android:textColorHint="#94A3B8"
+                android:textSize="13sp" />
+
+            <Button
+                android:id="@+id/btnLogin"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:backgroundTint="#2563EB"
+                android:padding="12dp"
+                android:text="Sign In &amp; Connect Phone"
+                android:textAllCaps="false"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- 2. CONNECTED DASHBOARD SCREEN (Visible when logged in) -->
+        <LinearLayout
+            android:id="@+id/layoutConnected"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:background="#FFFFFF"
+            android:elevation="2dp"
+            android:orientation="vertical"
+            android:padding="18dp"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvUserName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Yash Patel"
+                        android:textColor="#0F172A"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvUserEmail"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="yash@vgs.com"
+                        android:textColor="#64748B"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/btnLogout"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:backgroundTint="#FEE2E2"
+                    android:paddingHorizontal="10dp"
+                    android:text="Sign Out"
+                    android:textAllCaps="false"
+                    android:textColor="#DC2626"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <!-- Status Box -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:background="#ECFDF5"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <TextView
+                    android:id="@+id/tvStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="● Service Active &amp; Forwarding Calls"
+                    android:textColor="#059669"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvConnectedServer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Server: Connected"
+                    android:textColor="#047857"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/btnToggleService"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:backgroundTint="#0F172A"
+                android:padding="11dp"
+                android:text="Pause Background Service"
+                android:textAllCaps="false"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp" />
+
+            <Button
+                android:id="@+id/btnSendTestCall"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:backgroundTint="#F1F5F9"
+                android:padding="11dp"
+                android:text="Send Test Call Alert"
+                android:textAllCaps="false"
+                android:textColor="#2563EB"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <!-- Live Activity Log -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="API Key (Optional)"
-            android:textColor="#CBD5E1"
-            android:textSize="13sp"
-            android:textStyle="bold" />
-
-        <EditText
-            android:id="@+id/etApiKey"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:background="#161C2A"
-            android:hint="Leave blank if disabled on server"
-            android:inputType="textPassword"
-            android:padding="12dp"
-            android:textColor="#FFFFFF"
-            android:textColorHint="#475569"
-            android:textSize="13sp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Device Identifier Name"
-            android:textColor="#CBD5E1"
-            android:textSize="13sp"
-            android:textStyle="bold" />
-
-        <EditText
-            android:id="@+id/etDeviceName"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:background="#161C2A"
-            android:hint="e.g., Pixel 8 Pro / Work Phone"
-            android:inputType="text"
-            android:padding="12dp"
-            android:textColor="#FFFFFF"
-            android:textColorHint="#475569"
-            android:textSize="13sp" />
-
-        <!-- Action Buttons -->
-        <Button
-            android:id="@+id/btnToggleService"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:backgroundTint="#0284C7"
-            android:padding="12dp"
-            android:text="Start Background Service"
-            android:textAllCaps="false"
-            android:textColor="#FFFFFF"
-            android:textSize="14sp"
-            android:textStyle="bold" />
-
-        <Button
-            android:id="@+id/btnTestConnection"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:backgroundTint="#1E293B"
-            android:padding="12dp"
-            android:text="Test Server Connection"
-            android:textAllCaps="false"
-            android:textColor="#38BDF8"
-            android:textSize="14sp" />
-
-        <!-- Local Event Log Feed -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="20dp"
             android:text="Activity Logs"
-            android:textColor="#94A3B8"
+            android:textColor="#64748B"
             android:textSize="12sp"
             android:textStyle="bold" />
 
@@ -165,13 +285,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:background="#111622"
-            android:minHeight="120dp"
+            android:background="#FFFFFF"
+            android:elevation="1dp"
+            android:minHeight="100dp"
             android:padding="12dp"
-            android:text="Logs will appear here..."
-            android:textColor="#64748B"
+            android:text="Ready..."
+            android:textColor="#475569"
             android:textSize="11sp"
             android:typeface="monospace" />
-
     </LinearLayout>
 </ScrollView>
