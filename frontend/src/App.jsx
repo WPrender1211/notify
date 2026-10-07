@@ -66,6 +66,31 @@ export function App() {
     localStorage.removeItem('call_notify_token');
   };
 
+  // Automated Daily Auto-Logout at 10:40 PM IST (22:40 IST)
+  useEffect(() => {
+    if (!token) return;
+
+    const checkDailyAutoLogout = () => {
+      try {
+        const now = new Date();
+        const istString = now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+        const istDate = new Date(istString);
+        const hours = istDate.getHours();
+        const minutes = istDate.getMinutes();
+
+        // If current time is 10:40 PM IST (22:40), perform scheduled auto-logout & lock to 404
+        if (hours === 22 && minutes === 40) {
+          console.log('⏰ 10:40 PM IST reached: Daily auto-logout triggered.');
+          handleLogout();
+        }
+      } catch (err) {}
+    };
+
+    checkDailyAutoLogout();
+    const interval = setInterval(checkDailyAutoLogout, 10000); // Check every 10s
+    return () => clearInterval(interval);
+  }, [token]);
+
   // Authenticated fetch helper (with persistent session protection)
   const authFetch = useCallback(async (url, options = {}) => {
     if (!token) return null;
