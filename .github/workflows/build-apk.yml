@@ -2,7 +2,9 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ main, master ]
+    paths:
+      - 'android-app/**'
+      - '.github/workflows/build-apk.yml'
   workflow_dispatch:
 
 jobs:
@@ -21,6 +23,12 @@ jobs:
 
     - name: Set up Android SDK
       uses: android-actions/setup-android@v3
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: '8.4'
+        cache-disabled: true
 
     - name: Build Android APK
       run: |
