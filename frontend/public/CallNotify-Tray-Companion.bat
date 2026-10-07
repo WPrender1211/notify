@@ -1,4 +1,33 @@
-# Windows System Tray Companion for CallNotify
+<# :
+@echo off
+title CallNotify Tray Companion
+setlocal EnableDelayedExpansion
+
+:: Check if user wants to install to Windows Startup
+if "%~1"=="" (
+    echo =======================================================
+    echo   CallNotify Windows System Tray Companion
+    echo =======================================================
+    echo.
+    echo 1. Launch Tray Icon Now
+    echo 2. Install to Windows Startup (Auto-start on PC boot)
+    echo.
+    set /p "choice=Enter choice [1 or 2, default: 1]: "
+    if "!choice!"=="2" (
+        set "SHORTCUT_PATH=%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\CallNotifyTray.lnk"
+        powershell -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut('!SHORTCUT_PATH!'); $s.TargetPath = '%~f0'; $s.Arguments = '-minimized'; $s.WindowStyle = 7; $s.Save()"
+        echo.
+        echo [SUCCESS] CallNotify added to Windows Startup!
+        timeout /t 2 >nul
+    )
+)
+
+:: Launch hidden background PowerShell process with embedded script
+start "" powershell -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command "Invoke-Expression $([System.IO.File]::ReadAllText('%~f0'))"
+exit /b
+#>
+
+# Windows Forms & Drawing Assembly
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 

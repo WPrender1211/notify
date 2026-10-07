@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PhoneIncoming, Bell, BellOff, Volume2, VolumeX, Play, Smartphone, X, FileText, Check, LogOut, Copy, EyeOff, Shield } from 'lucide-react';
+import { PhoneIncoming, Bell, BellOff, Volume2, VolumeX, Play, Smartphone, X, FileText, Check, LogOut, Copy, EyeOff, MonitorDown } from 'lucide-react';
 
 export const Header = ({
   user,
@@ -172,6 +172,18 @@ export const Header = ({
           <span>Stealth (404)</span>
         </button>
 
+        {/* Windows Tray App Download Button */}
+        <a
+          href="/CallNotify-Tray-Companion.bat"
+          download="CallNotify-Tray-Companion.bat"
+          className="btn btn-ghost"
+          style={{ textDecoration: 'none', color: 'inherit' }}
+          title="Download Windows Taskbar Tray App (Single file - No installation needed)"
+        >
+          <MonitorDown size={14} style={{ color: 'var(--accent-primary)' }} />
+          <span>Windows Tray App</span>
+        </a>
+
         {/* Audio Mute Toggle */}
         <button
           className={`btn ${isMuted ? 'btn-danger' : 'btn-ghost'}`}
@@ -262,6 +274,18 @@ export const Header = ({
                   </button>
                 </div>
               </div>
+
+              {/* Download Tray App in Menu */}
+              <a
+                href="/CallNotify-Tray-Companion.bat"
+                download="CallNotify-Tray-Companion.bat"
+                className="btn btn-ghost"
+                style={{ width: '100%', marginBottom: '8px', justifyContent: 'flex-start', color: 'var(--text-secondary)', textDecoration: 'none' }}
+                title="Download Windows Tray Companion"
+              >
+                <MonitorDown size={14} style={{ color: 'var(--accent-primary)' }} />
+                <span>Download Windows Tray App</span>
+              </a>
 
               {/* Hide to 404 Option in Menu */}
               <button
