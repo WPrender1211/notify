@@ -107,20 +107,25 @@ authRouter.post('/register', async (req, res) => {
       return res.status(403).json({ error: 'Invalid Security Key. Contact your administrator.' });
     }
 
-    const existing = await db.findUserByEmail(email);
-    if (existing) {
-      return res.status(409).json({ error: 'An account with this email already exists' });
+    const existingEmail = await db.findUserByEmail(email);
+    if (existingEmail) {
+      return res.status(409).json({ error: 'An account with this email already exists. Please sign in.' });
+    }
+
+    let candidateUsername = username || email.split('@')[0] || name.trim().split(' ')[0].toLowerCase();
+    let existingUsername = await db.findUserByUsername(candidateUsername);
+    if (existingUsername) {
+      candidateUsername = `${candidateUsername}_${Math.floor(1000 + Math.random() * 9000)}`;
     }
 
     const password_hash = await bcrypt.hash(password, 10);
     const secret_key_hash = await bcrypt.hash('Ctrl+y->Alt+s', 10);
     const id = `user-${Date.now()}`;
-    const apiKey = `usr_key_${name.toLowerCase().replace(/\s+/g, '_')}_${uuidv4().slice(0, 8)}`;
-    const finalUsername = username || name.split(' ')[0];
+    const apiKey = `usr_key_${name.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${uuidv4().slice(0, 8)}`;
 
     const newUser = await db.createUser({
       id,
-      username: finalUsername,
+      username: candidateUsername,
       name,
       email,
       password_hash,
@@ -147,7 +152,7 @@ authRouter.post('/register', async (req, res) => {
     });
   } catch (err) {
     console.error('Registration error:', err);
-    return res.status(500).json({ error: 'Failed to create user account' });
+    return res.status(500).json({ error: err.message || 'Failed to create user account' });
   }
 });
 
