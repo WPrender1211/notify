@@ -104,6 +104,7 @@ export function App() {
     }
   }, [token, authFetch]);
 
+  // Stable, Long-Lived Real-Time Socket Connection
   useEffect(() => {
     if (!token) return;
 
@@ -112,7 +113,12 @@ export function App() {
     // Authenticated Socket.io connection scoped to user room (supports remote Render server)
     const socket = io(apiBase || undefined, {
       auth: { token },
-      transports: ['websocket', 'polling']
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 20000
     });
 
     socket.on('connect', () => {
@@ -120,8 +126,13 @@ export function App() {
       console.log('Real-time socket connected for user:', user?.name);
     });
 
-    socket.on('disconnect', () => {
+    socket.on('disconnect', (reason) => {
+      console.log('Real-time socket disconnected:', reason);
       setIsConnected(false);
+    });
+
+    socket.on('connect_error', (err) => {
+      console.warn('Socket connection error:', err.message);
     });
 
     socket.on('call:event', ({ event, call }) => {
@@ -211,7 +222,7 @@ export function App() {
     return () => {
       socket.disconnect();
     };
-  }, [token, user?.name, fetchData, authFetch]);
+  }, [token]);
 
   // Push notifications
   useEffect(() => {

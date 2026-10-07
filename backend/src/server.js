@@ -33,12 +33,15 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Initialize Socket.io with JWT authentication
+// Initialize Socket.io with JWT authentication & long-lived cloud proxy heartbeats
 const io = new SocketIOServer(server, {
   cors: {
     origin: '*',
     methods: ['GET', 'POST']
-  }
+  },
+  pingTimeout: 60000,
+  pingInterval: 25000,
+  connectTimeout: 45000
 });
 
 // Socket.io Auth Middleware
