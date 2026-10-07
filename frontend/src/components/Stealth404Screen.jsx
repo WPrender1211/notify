@@ -162,88 +162,68 @@ export const Stealth404Screen = ({ onUnlock }) => {
     };
   }, []);
 
-  // Lightning-Fast, High-Precision Shortcut Listener
+  // Relaxed & Forgiving Shortcut Detector (Generous 6-second window)
   useEffect(() => {
+    let lastCtrlYTime = 0;
     let keySequenceBuffer = [];
     let sequenceTimeout = null;
 
     const triggerUnlock = () => {
+      lastCtrlYTime = 0;
       keySequenceBuffer = [];
       if (sequenceTimeout) clearTimeout(sequenceTimeout);
       onUnlock();
-    };
-
-    const verifySequence = async (sequenceStr) => {
-      if (!sequenceStr) return;
-
-      // 1. Instant Zero-Latency Local Match (Matches Ctrl+Y -> Alt+S immediately)
-      const clean = sequenceStr.toLowerCase().replace(/\s+/g, '');
-      if (clean.includes('ctrl+y->alt+s') || clean === 'ctrl+y->alt+s') {
-        triggerUnlock();
-        return;
-      }
-
-      // Only query backend if sequence is complete (has at least 2 steps)
-      if (!sequenceStr.includes('->')) return;
-
-      // 2. Database verification for customized master shortcuts
-      try {
-        const endpoint = `${apiBase}/api/auth/verify-shortcut`;
-        const res = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sequence: sequenceStr })
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.unlocked) {
-            triggerUnlock();
-          }
-        }
-      } catch (err) {
-        // Fallback for offline/static networks
-        if (clean.includes('ctrl+y->alt+s')) {
-          triggerUnlock();
-        }
-      }
     };
 
     const handleKeyDown = (e) => {
       const keyLow = (e.key || '').toLowerCase();
       if (['control', 'alt', 'shift', 'meta'].includes(keyLow)) return;
 
-      const hasModifier = e.ctrlKey || e.altKey || e.metaKey;
-      if (!hasModifier) return;
+      const isCtrl = e.ctrlKey || e.metaKey;
+      const isAlt = e.altKey;
 
-      // Prevent browser default shortcut stealing (e.g. Alt key menu or Ctrl+Y redo)
-      if ((e.ctrlKey && keyLow === 'y') || (e.altKey && keyLow === 's')) {
+      // 1. Check Step 1: User presses Ctrl+Y (or Ctrl+Alt+Y)
+      if (isCtrl && keyLow === 'y') {
         e.preventDefault();
+        lastCtrlYTime = Date.now();
       }
 
+      // 2. Check Step 2: User presses Alt+S (or Ctrl+Alt+S) within 6 seconds of Step 1!
+      if (isAlt && keyLow === 's') {
+        e.preventDefault();
+        const now = Date.now();
+        // If Ctrl+Y was pressed anytime in the last 6 seconds, UNLOCK IMMEDIATELY!
+        if (now - lastCtrlYTime <= 6000 && lastCtrlYTime > 0) {
+          triggerUnlock();
+          return;
+        }
+      }
+
+      // 3. Fallback Sliding Window Buffer for custom sequences & full safety
       const mods = [];
-      if (e.ctrlKey) mods.push('Ctrl');
-      if (e.altKey) mods.push('Alt');
+      if (isCtrl) mods.push('Ctrl');
+      if (isAlt) mods.push('Alt');
       if (e.shiftKey) mods.push('Shift');
-      if (e.metaKey) mods.push('Meta');
 
       const combo = (mods.length > 0 ? mods.join('+') + '+' : '') + keyLow;
-
       keySequenceBuffer.push(combo);
-      if (keySequenceBuffer.length > 4) keySequenceBuffer.shift();
+      if (keySequenceBuffer.length > 6) keySequenceBuffer.shift();
 
       if (sequenceTimeout) clearTimeout(sequenceTimeout);
       sequenceTimeout = setTimeout(() => {
         keySequenceBuffer = [];
-      }, 3500);
+        lastCtrlYTime = 0;
+      }, 6000); // 6-second generous timeout
 
-      const fullSequence = keySequenceBuffer.join('->');
-      verifySequence(fullSequence);
+      const joined = keySequenceBuffer.join('->').toLowerCase().replace(/\s+/g, '');
+      if (joined.includes('ctrl+y->alt+s')) {
+        triggerUnlock();
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown, { passive: false });
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onUnlock, apiBase]);
+  }, [onUnlock]);
 
   return (
     <div
