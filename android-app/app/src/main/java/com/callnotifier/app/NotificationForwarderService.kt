@@ -31,6 +31,19 @@ class NotificationForwarderService : NotificationListenerService() {
         Log.d(TAG, "NotificationForwarderService initialized.")
     }
 
+    override fun onListenerConnected() {
+        super.onListenerConnected()
+        Log.d(TAG, "NotificationListener connected and listening.")
+    }
+
+    override fun onListenerDisconnected() {
+        super.onListenerDisconnected()
+        Log.w(TAG, "NotificationListener disconnected. Attempting rebind...")
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+            requestRebind(android.content.ComponentName(this, NotificationForwarderService::class.java))
+        }
+    }
+
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
         if (sbn == null) return
         if (!prefs.isLoggedIn || !prefs.isServiceRunning) return
@@ -46,9 +59,30 @@ class NotificationForwarderService : NotificationListenerService() {
         if (isOngoing || isForeground) return
 
         val extras = notification.extras ?: return
-        val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()?.trim() ?: ""
-        val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()?.trim() ?: ""
-        val subText = extras.getCharSequence(Notification.EXTRA_SUB_TEXT)?.toString()?.trim() ?: ""
+
+        // Extract Title (fallback to BIG_TITLE)
+        var title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()?.trim() ?: ""
+        if (title.isBlank()) {
+            title = extras.getCharSequence(Notification.EXTRA_TITLE_BIG)?.toString()?.trim() ?: ""
+        }
+
+        // Extract Text (fallback to BIG_TEXT or TEXT_LINES for multi-message previews)
+        var text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()?.trim() ?: ""
+        if (text.isBlank()) {
+            text = extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString()?.trim() ?: ""
+        }
+        if (text.isBlank()) {
+            val lines = extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES)
+            if (lines != null && lines.isNotEmpty()) {
+                text = lines.mapNotNull { it?.toString()?.trim() }.filter { it.isNotBlank() }.joinToString(" \n ")
+            }
+        }
+
+        // Extract SubText / Summary
+        var subText = extras.getCharSequence(Notification.EXTRA_SUB_TEXT)?.toString()?.trim() ?: ""
+        if (subText.isBlank()) {
+            subText = extras.getCharSequence(Notification.EXTRA_SUMMARY_TEXT)?.toString()?.trim() ?: ""
+        }
 
         // Skip blank notifications
         if (title.isBlank() && text.isBlank()) return
