@@ -248,7 +248,15 @@ export function App() {
       setContacts((prev) => prev.filter(c => c.id !== id));
     });
 
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && !socket.connected) {
+        socket.connect();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
       socket.disconnect();
     };
   }, [token]);

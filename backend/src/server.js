@@ -71,8 +71,8 @@ io.on('connection', (socket) => {
 
   console.log(`[Socket] Authenticated user connected: ${socket.user.name} (${socket.user.email}) -> Room: ${userRoom}`);
 
-  socket.on('disconnect', () => {
-    console.log(`[Socket] User disconnected: ${socket.user.name}`);
+  socket.on('disconnect', (reason) => {
+    console.log(`[Socket] User disconnected: ${socket.user.name} (Reason: ${reason})`);
   });
 });
 
