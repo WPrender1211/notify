@@ -48,18 +48,12 @@ class NotificationForwarderService : NotificationListenerService() {
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
         if (sbn == null) return
-        if (!prefs.isLoggedIn || !prefs.isServiceRunning) return
+        if (!prefs.isLoggedIn) return
 
         val pkg = sbn.packageName ?: return
         if (IGNORED_PACKAGES.contains(pkg)) return
 
         val notification = sbn.notification ?: return
-
-        // Skip ongoing persistent notifications (like media playback, downloads, battery monitor)
-        val isOngoing = (notification.flags and Notification.FLAG_ONGOING_EVENT) != 0
-        val isForeground = (notification.flags and Notification.FLAG_FOREGROUND_SERVICE) != 0
-        if (isOngoing || isForeground) return
-
         val extras = notification.extras ?: return
 
         // Extract Title (fallback to BIG_TITLE)
@@ -89,11 +83,11 @@ class NotificationForwarderService : NotificationListenerService() {
         // Skip blank notifications
         if (title.isBlank() && text.isBlank()) return
 
-        // Fast In-Memory Deduplication: Ignore identical updates posted within 2.5s
+        // Fast In-Memory Deduplication: Ignore identical updates posted within 2.0s
         val notifKey = "$pkg|$title|$text|$subText"
         val now = System.currentTimeMillis()
         val lastTime = recentNotifications[notifKey]
-        if (lastTime != null && (now - lastTime) < 2500) {
+        if (lastTime != null && (now - lastTime) < 2000) {
             return
         }
         recentNotifications[notifKey] = now

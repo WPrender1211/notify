@@ -36,6 +36,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvConnectedServer: TextView
     private lateinit var btnToggleService: Button
     private lateinit var btnSendTestCall: Button
+    private lateinit var btnSendTestNotif: Button
     private lateinit var btnLogout: Button
 
     private lateinit var tvLogs: TextView
@@ -86,6 +87,7 @@ class MainActivity : AppCompatActivity() {
         btnToggleService = findViewById(R.id.btnToggleService)
         val btnEnableNotifAccess = findViewById<Button>(R.id.btnEnableNotifAccess)
         btnSendTestCall = findViewById(R.id.btnSendTestCall)
+        btnSendTestNotif = findViewById(R.id.btnSendTestNotif)
         btnLogout = findViewById(R.id.btnLogout)
         tvLogs = findViewById(R.id.tvLogs)
 
@@ -191,6 +193,28 @@ class MainActivity : AppCompatActivity() {
                     Toast.makeText(this@MainActivity, "Test call sent to dashboard!", Toast.LENGTH_SHORT).show()
                 } else {
                     appendLog("❌ Failed to deliver test call. Check internet connection.")
+                }
+            }
+        }
+
+        // Send Test App Notification (WhatsApp)
+        btnSendTestNotif.setOnClickListener {
+            appendLog("📡 Sending test WhatsApp notification to web dashboard...")
+            CoroutineScope(Dispatchers.Main).launch {
+                val success = ApiClient.sendNotificationEvent(
+                    serverUrl = prefs.serverUrl,
+                    packageName = "com.whatsapp",
+                    appName = "WhatsApp",
+                    title = "VIP Client",
+                    text = "Hello! This is a test notification message from CallNotify v3.0.",
+                    subText = "WhatsApp",
+                    apiKey = prefs.apiKey
+                )
+                if (success) {
+                    appendLog("✅ Test WhatsApp notification delivered to dashboard & tray companion!")
+                    Toast.makeText(this@MainActivity, "Test notification sent!", Toast.LENGTH_SHORT).show()
+                } else {
+                    appendLog("❌ Failed to deliver notification. Check internet connection.")
                 }
             }
         }

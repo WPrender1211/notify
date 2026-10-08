@@ -29,13 +29,35 @@ object ApiClient {
 
     private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
 
+    private fun getBaseUrl(serverUrl: String): String {
+        var base = serverUrl.trim()
+        while (base.endsWith("/")) {
+            base = base.substring(0, base.length - 1)
+        }
+        if (base.endsWith("/api/calls/event")) {
+            base = base.substring(0, base.length - "/api/calls/event".length)
+        } else if (base.endsWith("/api/notifications/event")) {
+            base = base.substring(0, base.length - "/api/notifications/event".length)
+        } else if (base.endsWith("/api/calls")) {
+            base = base.substring(0, base.length - "/api/calls".length)
+        } else if (base.endsWith("/api/notifications")) {
+            base = base.substring(0, base.length - "/api/notifications".length)
+        } else if (base.endsWith("/api")) {
+            base = base.substring(0, base.length - "/api".length)
+        }
+        while (base.endsWith("/")) {
+            base = base.substring(0, base.length - 1)
+        }
+        return base
+    }
+
     suspend fun login(
         serverUrl: String,
         emailOrUsername: String,
         password: String
     ): Pair<Boolean, UserSession?> = withContext(Dispatchers.IO) {
         try {
-            val base = serverUrl.trim().removeSuffix("/").removeSuffix("/api/calls/event")
+            val base = getBaseUrl(serverUrl)
             val loginUrl = "$base/api/auth/login"
 
             val json = JSONObject().apply {
@@ -85,8 +107,8 @@ object ApiClient {
         apiKey: String = ""
     ): Boolean = withContext(Dispatchers.IO) {
         try {
-            val base = serverUrl.trim().removeSuffix("/")
-            val endpoint = if (base.endsWith("/api/calls/event")) base else "$base/api/calls/event"
+            val base = getBaseUrl(serverUrl)
+            val endpoint = "$base/api/calls/event"
 
             val json = JSONObject().apply {
                 put("number", number)
@@ -128,7 +150,7 @@ object ApiClient {
         apiKey: String = ""
     ): Boolean = withContext(Dispatchers.IO) {
         try {
-            val base = serverUrl.trim().removeSuffix("/")
+            val base = getBaseUrl(serverUrl)
             val endpoint = "$base/api/notifications/event"
 
             val json = JSONObject().apply {
@@ -153,7 +175,7 @@ object ApiClient {
 
             val response = client.newCall(request).execute()
             val success = response.isSuccessful
-            Log.d(TAG, "Dispatched App Notification ($appName): Success=$success")
+            Log.d(TAG, "Dispatched App Notification ($appName) to $endpoint: Success=$success, Code=${response.code}")
             response.close()
             return@withContext success
         } catch (e: Exception) {

@@ -253,7 +253,19 @@
                 android:layout_marginTop="8dp"
                 android:backgroundTint="#F1F5F9"
                 android:padding="11dp"
-                android:text="Send Test Call Alert"
+                android:text="📞 Send Test Call Alert"
+                android:textAllCaps="false"
+                android:textColor="#475569"
+                android:textSize="13sp" />
+
+            <Button
+                android:id="@+id/btnSendTestNotif"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:backgroundTint="#F1F5F9"
+                android:padding="11dp"
+                android:text="💬 Send Test App Notification (WhatsApp)"
                 android:textAllCaps="false"
                 android:textColor="#475569"
                 android:textSize="13sp" />
