@@ -85,7 +85,7 @@ export const ContactsManager = ({ contacts, onAddContact, onDeleteContact }) => 
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                   <div>
-                    <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.95rem' }}>{c.name}</div>
+                    <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem' }}>{c.name}</div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
                       {c.number}
                     </div>
@@ -110,7 +110,7 @@ export const ContactsManager = ({ contacts, onAddContact, onDeleteContact }) => 
                 )}
 
                 {c.notes && (
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '8px', background: 'rgba(0,0,0,0.2)', padding: '6px 8px', borderRadius: '6px' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '8px', background: 'rgba(0,0,0,0.04)', padding: '6px 8px', borderRadius: '6px' }}>
                     {c.notes}
                   </div>
                 )}
@@ -136,7 +136,7 @@ export const ContactsManager = ({ contacts, onAddContact, onDeleteContact }) => 
         <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
           <div className="modal-dialog" style={{ maxWidth: '440px' }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <span style={{ fontSize: '1.05rem', fontWeight: 600, color: '#fff' }}>Add New Contact</span>
+              <span style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-primary)' }}>Add New Contact</span>
               <button className="btn btn-ghost btn-icon" onClick={() => setShowAddModal(false)}>
                 <X size={16} />
               </button>

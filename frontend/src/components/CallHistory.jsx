@@ -138,15 +138,17 @@ export const CallHistory = ({ calls, onUpdateNotes, onDeleteCall, onClearCalls }
                 <tr key={call.id} className={call.state === 'RINGING' ? 'row-ringing' : ''}>
                   <td>{getStateBadge(call.state)}</td>
                   <td>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontWeight: 600, color: '#fff' }}>
-                        {call.name || 'Unknown Caller'}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <span style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-primary)' }}>
+                        {call.name && call.name !== call.number ? call.name : (call.number || 'Unknown Caller')}
                       </span>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
-                        {call.number}
-                      </span>
+                      {call.name && call.name !== call.number && (
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
+                          {call.number}
+                        </span>
+                      )}
                       {call.company && (
-                        <span style={{ fontSize: '0.75rem', color: 'var(--accent-cyan)', marginTop: '2px' }}>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--accent-primary)', fontWeight: 600, marginTop: '2px' }}>
                           🏢 {call.company} {call.tag && `• ${call.tag}`}
                         </span>
                       )}
