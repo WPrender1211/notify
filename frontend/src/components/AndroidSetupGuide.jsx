@@ -77,32 +77,44 @@ export const AndroidSetupGuide = ({ isOpen, onClose, user }) => {
                 marginBottom: '20px',
                 textAlign: 'center'
               }}>
-                <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
-                  📱 Download CallNotify Mobile App
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    📱 Download CallNotify Mobile App
+                  </span>
+                  <span style={{
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    background: 'var(--accent-primary)',
+                    color: '#ffffff',
+                    padding: '2px 8px',
+                    borderRadius: '12px'
+                  }}>
+                    v3.0 Latest
+                  </span>
                 </div>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '14px' }}>
-                  Install directly on any Android 8.0+ smartphone to auto-forward incoming and live phone calls.
+                  Forward incoming calls, caller ID, and app notifications (WhatsApp, Uber, Instagram, SMS &amp; OTPs) in real-time.
                 </p>
 
                 <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
                   <a
                     href="/app-debug.apk"
-                    download="CallNotify.apk"
+                    download="CallNotify-v3.0.apk"
                     className="btn btn-primary"
                     style={{ padding: '9px 18px', fontSize: '0.88rem', textDecoration: 'none', gap: '8px' }}
                   >
                     <ArrowDownCircle size={16} />
-                    <span>Download APK Directly (.apk)</span>
+                    <span>Download v3.0 APK (.apk)</span>
                   </a>
 
                   <a
-                    href="/CallNotifier-Android-App.zip"
-                    download="CallNotifier-Android-App.zip"
+                    href="/CallNotifier-Android-App-v3.0.zip"
+                    download="CallNotifier-Android-App-v3.0.zip"
                     className="btn btn-secondary"
                     style={{ padding: '9px 14px', fontSize: '0.85rem', textDecoration: 'none', gap: '6px' }}
                   >
                     <FileArchive size={15} />
-                    <span>Download ZIP (.zip)</span>
+                    <span>Download v3.0 ZIP (.zip)</span>
                   </a>
                 </div>
               </div>
