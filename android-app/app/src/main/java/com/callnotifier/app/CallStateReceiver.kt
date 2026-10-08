@@ -54,8 +54,8 @@ class CallStateReceiver : BroadcastReceiver() {
                 TelephonyManager.EXTRA_STATE_RINGING -> {
                     isIncoming = true
                     val pendingResult = goAsync()
-                    // Allow 300ms for secondary broadcast with number to arrive or CallLog lookup
-                    CallDispatcher.dispatch(context, targetNumber, "RINGING", delayMs = 300) {
+                    // Allow 400ms for secondary broadcast with number or CallLog sync
+                    CallDispatcher.dispatch(context, targetNumber, "RINGING", delayMs = 400) {
                         pendingResult.finish()
                     }
                 }
@@ -71,8 +71,8 @@ class CallStateReceiver : BroadcastReceiver() {
                 TelephonyManager.EXTRA_STATE_IDLE -> {
                     val pendingResult = goAsync()
                     val targetState = if (lastState == TelephonyManager.EXTRA_STATE_RINGING) "MISSED" else "ENDED"
-                    // On IDLE (Call Ended or Missed), delay 500ms so Android has written the actual phone number and contact name into CallLog!
-                    CallDispatcher.dispatch(context, targetNumber, targetState, delayMs = 500) {
+                    // On IDLE (Call Ended or Missed), delay 800ms so Android has written the actual phone number and contact name into CallLog!
+                    CallDispatcher.dispatch(context, targetNumber, targetState, delayMs = 800) {
                         pendingResult.finish()
                     }
                     isIncoming = false

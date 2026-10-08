@@ -173,11 +173,10 @@ export function App() {
         setActiveCall(null);
       }
 
-      // Trigger instant native desktop notification if tab is minimized, hidden, or unfocused (and not muted)
+      // Trigger instant native desktop notification (when permitted and not muted)
       const currentMuted = localStorage.getItem('call_notify_muted') === 'true';
-      const isTabBackgrounded = document.visibilityState === 'hidden' || !document.hasFocus();
 
-      if (!currentMuted && isTabBackgrounded && Notification.permission === 'granted') {
+      if (!currentMuted && Notification.permission === 'granted') {
         const title = event === 'RINGING'
           ? `Incoming: ${call.name || 'Unknown Caller'}`
           : (event === 'MISSED' ? `Missed: ${call.name || 'Unknown Caller'}` : null);

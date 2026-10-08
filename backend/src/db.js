@@ -250,8 +250,10 @@ export const db = {
     if (updates.state !== undefined) { setClauses.push('state = ?'); values.push(updates.state); }
     if (updates.duration !== undefined) { setClauses.push('duration = ?'); values.push(updates.duration); }
     if (updates.notes !== undefined) { setClauses.push('notes = ?'); values.push(updates.notes); }
+    if (updates.number !== undefined) { setClauses.push('number = ?'); values.push(updates.number); }
     if (updates.name !== undefined) { setClauses.push('name = ?'); values.push(updates.name); }
     if (updates.company !== undefined) { setClauses.push('company = ?'); values.push(updates.company); }
+    if (updates.tag !== undefined) { setClauses.push('tag = ?'); values.push(updates.tag); }
 
     if (setClauses.length > 0) {
       values.push(callId, userId);

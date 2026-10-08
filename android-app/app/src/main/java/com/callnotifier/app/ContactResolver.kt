@@ -14,21 +14,26 @@ object ContactResolver {
     fun resolveCaller(context: Context, incomingNumber: String?): CallerInfo {
         var finalNumber = incomingNumber?.trim()
 
-        // 1. If incomingNumber is empty or unknown, check CallLog for the latest call entry
+        // 1. If incomingNumber is empty or unknown, check CallLog
         if (finalNumber.isNullOrBlank() || 
             finalNumber.equals("Unknown Number", ignoreCase = true) || 
             finalNumber.equals("Incoming Caller", ignoreCase = true) ||
-            finalNumber.equals("Unknown", ignoreCase = true)) {
+            finalNumber.equals("Unknown", ignoreCase = true) ||
+            finalNumber.equals("Private Number", ignoreCase = true)) {
             
             val callLogCaller = getLatestCallerFromCallLog(context)
             if (callLogCaller != null && !callLogCaller.number.isNullOrBlank()) {
-                return callLogCaller
+                finalNumber = callLogCaller.number
+                if (callLogCaller.name != "Unknown Caller" && callLogCaller.name != callLogCaller.number) {
+                    return callLogCaller
+                }
             }
         }
 
         val displayNum = if (!finalNumber.isNullOrBlank() && 
             !finalNumber.equals("Unknown Number", ignoreCase = true) && 
-            !finalNumber.equals("Incoming Caller", ignoreCase = true)) {
+            !finalNumber.equals("Incoming Caller", ignoreCase = true) &&
+            !finalNumber.equals("Private Number", ignoreCase = true)) {
             finalNumber
         } else {
             "Unknown Number"
@@ -81,7 +86,8 @@ object ContactResolver {
                 CallLog.Calls.DATE,
                 CallLog.Calls.TYPE
             )
-            val sortOrder = "${CallLog.Calls.DATE} DESC LIMIT 1"
+            // Valid Android SQL sort order (without LIMIT clause to avoid SQLite syntax error on ContentResolver)
+            val sortOrder = "${CallLog.Calls.DATE} DESC"
 
             context.contentResolver.query(
                 CallLog.Calls.CONTENT_URI,
@@ -104,7 +110,7 @@ object ContactResolver {
                             val resolvedName = getContactName(context, number)
                             if (resolvedName != "Unknown Caller") resolvedName else number
                         }
-                        Log.d(TAG, "Successfully extracted real call from CallLog: Number=$number, Name=$name")
+                        Log.d(TAG, "Extracted real call from CallLog: Number=$number, Name=$name")
                         return CallerInfo(number = number, name = name)
                     }
                 }

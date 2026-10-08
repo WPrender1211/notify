@@ -55,10 +55,22 @@ export const createCallRouter = (io) => {
       let callRecord;
 
       if (activeCall && (formattedState === 'ANSWERED' || formattedState === 'ENDED' || formattedState === 'MISSED' || formattedState === 'REJECTED')) {
-        callRecord = await db.updateCall(activeCall.id, {
+        const updateData = {
           state: formattedState,
           duration: duration !== undefined ? duration : (activeCall.duration || 0)
-        }, user.id);
+        };
+
+        if (number && (!activeCall.number || activeCall.number === 'Unknown Number' || activeCall.number === 'Private Number' || activeCall.number === 'Incoming Caller')) {
+          updateData.number = number;
+        }
+
+        if (callerName && callerName !== 'Unknown Caller' && (!activeCall.name || activeCall.name === 'Unknown Caller' || activeCall.name === 'Unknown Number' || activeCall.name === 'Incoming Caller')) {
+          updateData.name = callerName;
+          updateData.company = callerCompany;
+          updateData.tag = callerTag;
+        }
+
+        callRecord = await db.updateCall(activeCall.id, updateData, user.id);
       } else {
         callRecord = await db.addCall({
           id: uuidv4(),
