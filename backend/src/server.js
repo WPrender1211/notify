@@ -16,6 +16,7 @@ import { pushRouter } from './routes/push.js';
 import { createSettingsRouter } from './routes/settings.js';
 import { createSimulatorRouter } from './routes/simulator.js';
 import { createTrayRouter } from './routes/tray.js';
+import { createNotificationRouter } from './routes/notifications.js';
 
 dotenv.config();
 
@@ -79,6 +80,7 @@ io.on('connection', (socket) => {
 // API Routes
 app.use('/api/auth', authRouter);
 app.use('/api/calls', createCallRouter(io));
+app.use('/api/notifications', createNotificationRouter(io));
 app.use('/api/contacts', createContactRouter(io));
 app.use('/api/push', pushRouter);
 app.use('/api/settings', createSettingsRouter());

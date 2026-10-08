@@ -4,11 +4,13 @@ import { AuthModal } from './components/AuthModal';
 import { Header } from './components/Header';
 import { StatsCards } from './components/StatsCards';
 import { CallHistory } from './components/CallHistory';
+import { NotificationFeed } from './components/NotificationFeed';
+import { AppRulesModal } from './components/AppRulesModal';
 import { ContactsManager } from './components/ContactsManager';
 import { SimulatorModal } from './components/SimulatorModal';
 import { AndroidSetupGuide } from './components/AndroidSetupGuide';
 import { Stealth404Screen } from './components/Stealth404Screen';
-import { Phone, Users } from 'lucide-react';
+import { Phone, Users, Bell, SlidersHorizontal } from 'lucide-react';
 import { getApiBaseUrl } from './config';
 
 export function App() {
@@ -24,6 +26,8 @@ export function App() {
   const [activeTab, setActiveTab] = useState('history');
   const [calls, setCalls] = useState([]);
   const [activeCall, setActiveCall] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const [appRules, setAppRules] = useState([]);
   const [contacts, setContacts] = useState([]);
   const [stats, setStats] = useState({ total: 0, todayCount: 0, missed: 0, answered: 0 });
   const [serverSettings, setServerSettings] = useState({ localIps: [], port: 5000 });
@@ -34,6 +38,7 @@ export function App() {
   // Modals
   const [showSimulator, setShowSimulator] = useState(false);
   const [showAndroidGuide, setShowAndroidGuide] = useState(false);
+  const [showAppRulesModal, setShowAppRulesModal] = useState(false);
 
   const handleToggleMute = async () => {
     const nextVal = !isMuted;
@@ -116,11 +121,13 @@ export function App() {
   const fetchData = useCallback(async () => {
     if (!token) return;
     try {
-      const [callsRes, contactsRes, statsRes, settingsRes] = await Promise.all([
+      const [callsRes, contactsRes, statsRes, settingsRes, notifsRes, rulesRes] = await Promise.all([
         authFetch('/api/calls'),
         authFetch('/api/contacts'),
         authFetch('/api/calls/stats'),
-        authFetch('/api/settings')
+        authFetch('/api/settings'),
+        authFetch('/api/notifications'),
+        authFetch('/api/notifications/rules')
       ]);
 
       if (callsRes?.calls) setCalls(callsRes.calls);
@@ -128,6 +135,8 @@ export function App() {
       if (contactsRes?.contacts) setContacts(contactsRes.contacts);
       if (statsRes) setStats(statsRes);
       if (settingsRes) setServerSettings(settingsRes);
+      if (notifsRes?.notifications) setNotifications(notifsRes.notifications);
+      if (rulesRes?.rules) setAppRules(rulesRes.rules);
     } catch (err) {
       console.error('Error fetching user data:', err);
     }
@@ -261,6 +270,44 @@ export function App() {
       setActiveCall(null);
     });
 
+    socket.on('notification:event', ({ notification, showPopup }) => {
+      console.log('App notification received:', notification, 'ShowPopup:', showPopup);
+      setNotifications((prev) => [notification, ...prev]);
+
+      const currentMuted = localStorage.getItem('call_notify_muted') === 'true';
+      if (!currentMuted && showPopup) {
+        playAlertChime();
+
+        if (Notification.permission === 'granted') {
+          const title = `${notification.appName || 'Notification'}: ${notification.title || ''}`.trim();
+          const body = notification.text || notification.subText || '';
+          const options = {
+            body: body,
+            tag: `app-${notification.packageName}-${notification.id}`,
+            renotify: true
+          };
+
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.ready.then((reg) => {
+              reg.showNotification(title, options);
+            }).catch(() => {
+              try { new Notification(title, options); } catch (e) {}
+            });
+          } else {
+            try { new Notification(title, options); } catch (e) {}
+          }
+        }
+      }
+    });
+
+    socket.on('notification:deleted', ({ id }) => {
+      setNotifications((prev) => prev.filter(n => n.id !== id));
+    });
+
+    socket.on('notification:cleared', () => {
+      setNotifications([]);
+    });
+
     socket.on('contact:created', (newContact) => {
       setContacts((prev) => [newContact, ...prev]);
     });
@@ -352,6 +399,24 @@ export function App() {
     await authFetch('/api/calls', { method: 'DELETE' });
   };
 
+  const handleDeleteNotification = async (notifId) => {
+    await authFetch(`/api/notifications/${notifId}`, { method: 'DELETE' });
+  };
+
+  const handleClearNotifications = async () => {
+    await authFetch('/api/notifications/clear', { method: 'DELETE' });
+  };
+
+  const handleSaveAppRule = async (packageName, appName, logToWeb, showPopup) => {
+    const res = await authFetch('/api/notifications/rules', {
+      method: 'POST',
+      body: JSON.stringify({ packageName, appName, logToWeb, showPopup })
+    });
+    if (res?.rules) {
+      setAppRules(res.rules);
+    }
+  };
+
   const handleAddContact = async (contactData) => {
     await authFetch('/api/contacts', {
       method: 'POST',
@@ -410,6 +475,14 @@ export function App() {
             <span className="tab-count">{calls.length}</span>
           </button>
           <button
+            className={`tab-btn ${activeTab === 'notifications' ? 'active' : ''}`}
+            onClick={() => setActiveTab('notifications')}
+          >
+            <Bell size={16} />
+            <span>App Notifications</span>
+            <span className="tab-count">{notifications.length}</span>
+          </button>
+          <button
             className={`tab-btn ${activeTab === 'contacts' ? 'active' : ''}`}
             onClick={() => setActiveTab('contacts')}
           >
@@ -432,7 +505,17 @@ export function App() {
           </>
         )}
 
-        {/* Tab 2: Contacts Directory */}
+        {/* Tab 2: App Notifications Feed */}
+        {activeTab === 'notifications' && (
+          <NotificationFeed
+            notifications={notifications}
+            onDeleteNotification={handleDeleteNotification}
+            onClearNotifications={handleClearNotifications}
+            onOpenAppRules={() => setShowAppRulesModal(true)}
+          />
+        )}
+
+        {/* Tab 3: Contacts Directory */}
         {activeTab === 'contacts' && (
           <ContactsManager
             contacts={contacts}
@@ -457,6 +540,14 @@ export function App() {
         localIps={serverSettings.localIps}
         port={serverSettings.port}
         user={user}
+      />
+
+      {/* App Rules & Mute Filter Modal */}
+      <AppRulesModal
+        isOpen={showAppRulesModal}
+        onClose={() => setShowAppRulesModal(false)}
+        rules={appRules}
+        onSaveRule={handleSaveAppRule}
       />
     </div>
   );

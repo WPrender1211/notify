@@ -117,6 +117,38 @@ export async function initDb() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
 
+    // 6. app_notifications Table
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS app_notifications (
+        id VARCHAR(50) PRIMARY KEY,
+        user_id VARCHAR(50) NOT NULL,
+        package_name VARCHAR(150) NOT NULL,
+        app_name VARCHAR(100) NOT NULL,
+        title VARCHAR(255),
+        text TEXT,
+        sub_text VARCHAR(255),
+        timestamp DATETIME NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_notif_user (user_id),
+        INDEX idx_notif_pkg (package_name),
+        INDEX idx_notif_time (timestamp)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    // 7. app_rules Table (Custom App Filters / Mute Settings)
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS app_rules (
+        id VARCHAR(50) PRIMARY KEY,
+        user_id VARCHAR(50) NOT NULL,
+        package_name VARCHAR(150) NOT NULL,
+        app_name VARCHAR(100) NOT NULL,
+        log_to_web TINYINT(1) DEFAULT 1,
+        show_popup TINYINT(1) DEFAULT 1,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uk_user_pkg (user_id, package_name)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
     // Remove any legacy seeded demo users (like user-alex)
     await conn.query("DELETE FROM admin_users WHERE id IN ('user-alex')");
 
@@ -378,5 +410,97 @@ export const db = {
 
   async removeSubscription(endpoint, userId) {
     await pool.query('DELETE FROM push_subscriptions WHERE endpoint = ? AND user_id = ?', [endpoint, userId]);
+  },
+
+  // App Notifications
+  async addNotification(notifData) {
+    const uid = notifData.userId || notifData.user_id;
+    const dateVal = notifData.timestamp ? new Date(notifData.timestamp) : new Date();
+    await pool.query(`
+      INSERT INTO app_notifications (id, user_id, package_name, app_name, title, text, sub_text, timestamp)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      notifData.id,
+      uid,
+      notifData.packageName,
+      notifData.appName || 'App',
+      notifData.title || '',
+      notifData.text || '',
+      notifData.subText || '',
+      dateVal
+    ]);
+    return { ...notifData, userId: uid };
+  },
+
+  async getNotifications(userId, limit = 100) {
+    const [rows] = await pool.query(
+      'SELECT * FROM app_notifications WHERE user_id = ? ORDER BY timestamp DESC LIMIT ?',
+      [userId, Number(limit)]
+    );
+    return rows.map(r => ({
+      id: r.id,
+      userId: r.user_id,
+      packageName: r.package_name,
+      appName: r.app_name,
+      title: r.title,
+      text: r.text,
+      subText: r.sub_text,
+      timestamp: r.timestamp instanceof Date ? r.timestamp.toISOString() : r.timestamp
+    }));
+  },
+
+  async deleteNotification(notifId, userId) {
+    await pool.query('DELETE FROM app_notifications WHERE id = ? AND user_id = ?', [notifId, userId]);
+  },
+
+  async clearNotifications(userId) {
+    await pool.query('DELETE FROM app_notifications WHERE user_id = ?', [userId]);
+  },
+
+  // App Rules (Filters & Checkboxes)
+  async getAppRules(userId) {
+    const [rows] = await pool.query('SELECT * FROM app_rules WHERE user_id = ? ORDER BY updated_at DESC', [userId]);
+    return rows.map(r => ({
+      id: r.id,
+      userId: r.user_id,
+      packageName: r.package_name,
+      appName: r.app_name,
+      logToWeb: Boolean(r.log_to_web),
+      showPopup: Boolean(r.show_popup),
+      updatedAt: r.updated_at
+    }));
+  },
+
+  async getAppRuleForPackage(userId, packageName) {
+    const [rows] = await pool.query(
+      'SELECT * FROM app_rules WHERE user_id = ? AND package_name = ?',
+      [userId, packageName]
+    );
+    if (rows[0]) {
+      return {
+        logToWeb: Boolean(rows[0].log_to_web),
+        showPopup: Boolean(rows[0].show_popup)
+      };
+    }
+    // Default: Log to web = true, Show popup = true
+    return { logToWeb: true, showPopup: true };
+  },
+
+  async upsertAppRule(userId, id, packageName, appName, logToWeb, showPopup) {
+    await pool.query(`
+      INSERT INTO app_rules (id, user_id, package_name, app_name, log_to_web, show_popup)
+      VALUES (?, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        app_name = VALUES(app_name),
+        log_to_web = VALUES(log_to_web),
+        show_popup = VALUES(show_popup)
+    `, [
+      id,
+      userId,
+      packageName,
+      appName,
+      logToWeb ? 1 : 0,
+      showPopup ? 1 : 0
+    ]);
   }
 };

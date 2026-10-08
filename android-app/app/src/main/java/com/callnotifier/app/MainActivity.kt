@@ -83,9 +83,20 @@ class MainActivity : AppCompatActivity() {
         tvStatus = findViewById(R.id.tvStatus)
         tvConnectedServer = findViewById(R.id.tvConnectedServer)
         btnToggleService = findViewById(R.id.btnToggleService)
+        val btnEnableNotifAccess = findViewById<Button>(R.id.btnEnableNotifAccess)
         btnSendTestCall = findViewById(R.id.btnSendTestCall)
         btnLogout = findViewById(R.id.btnLogout)
         tvLogs = findViewById(R.id.tvLogs)
+
+        btnEnableNotifAccess.setOnClickListener {
+            if (isNotificationServiceEnabled()) {
+                Toast.makeText(this, "✅ App Notifications are already enabled!", Toast.LENGTH_SHORT).show()
+                appendLog("✅ App Notifications (WhatsApp, Uber, etc.) are active.")
+            } else {
+                appendLog("⚙️ Opening Android Settings to enable Notification Access...")
+                startActivity(Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+            }
+        }
 
         // Login Action (Zero URL prompt needed)
         btnLogin.setOnClickListener {
@@ -200,6 +211,11 @@ class MainActivity : AppCompatActivity() {
         return requiredPermissions.all {
             ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
         }
+    }
+
+    private fun isNotificationServiceEnabled(): Boolean {
+        val flat = android.provider.Settings.Secure.getString(contentResolver, "enabled_notification_listeners")
+        return flat != null && flat.contains(packageName)
     }
 
     private fun requestRequiredPermissions() {

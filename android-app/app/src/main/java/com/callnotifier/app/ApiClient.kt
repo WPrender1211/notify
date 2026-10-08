@@ -117,4 +117,48 @@ object ApiClient {
             return@withContext false
         }
     }
+
+    suspend fun sendNotificationEvent(
+        serverUrl: String,
+        packageName: String,
+        appName: String,
+        title: String,
+        text: String,
+        subText: String,
+        apiKey: String = ""
+    ): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val base = serverUrl.trim().removeSuffix("/")
+            val endpoint = "$base/api/notifications/event"
+
+            val json = JSONObject().apply {
+                put("packageName", packageName)
+                put("appName", appName)
+                put("title", title)
+                put("text", text)
+                put("subText", subText)
+                put("timestamp", java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply {
+                    timeZone = java.util.TimeZone.getTimeZone("UTC")
+                }.format(java.util.Date()))
+                if (apiKey.isNotBlank()) {
+                    put("apiKey", apiKey)
+                }
+            }
+
+            val body = json.toString().toRequestBody(JSON_MEDIA_TYPE)
+            val request = Request.Builder()
+                .url(endpoint)
+                .post(body)
+                .build()
+
+            val response = client.newCall(request).execute()
+            val success = response.isSuccessful
+            Log.d(TAG, "Dispatched App Notification ($appName): Success=$success")
+            response.close()
+            return@withContext success
+        } catch (e: Exception) {
+            Log.e(TAG, "Error sending notification event: ${e.message}", e)
+            return@withContext false
+        }
+    }
 }

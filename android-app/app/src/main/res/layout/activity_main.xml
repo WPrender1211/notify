@@ -235,6 +235,18 @@
                 android:textSize="13sp" />
 
             <Button
+                android:id="@+id/btnEnableNotifAccess"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:backgroundTint="#EFF6FF"
+                android:padding="11dp"
+                android:text="🔔 Enable App Notifications (WhatsApp, Uber...)"
+                android:textAllCaps="false"
+                android:textColor="#2563EB"
+                android:textSize="13sp" />
+
+            <Button
                 android:id="@+id/btnSendTestCall"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -243,7 +255,7 @@
                 android:padding="11dp"
                 android:text="Send Test Call Alert"
                 android:textAllCaps="false"
-                android:textColor="#2563EB"
+                android:textColor="#475569"
                 android:textSize="13sp" />
         </LinearLayout>
 
