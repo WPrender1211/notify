@@ -20,6 +20,8 @@ class NotificationForwarderService : NotificationListenerService() {
             "com.android.systemui",
             "com.google.android.googlequicksearchbox"
         )
+
+        private val recentNotifications = java.util.concurrent.ConcurrentHashMap<String, Long>()
     }
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -86,6 +88,19 @@ class NotificationForwarderService : NotificationListenerService() {
 
         // Skip blank notifications
         if (title.isBlank() && text.isBlank()) return
+
+        // Fast In-Memory Deduplication: Ignore identical updates posted within 2.5s
+        val notifKey = "$pkg|$title|$text|$subText"
+        val now = System.currentTimeMillis()
+        val lastTime = recentNotifications[notifKey]
+        if (lastTime != null && (now - lastTime) < 2500) {
+            return
+        }
+        recentNotifications[notifKey] = now
+        if (recentNotifications.size > 150) {
+            val cutoff = now - 10000
+            recentNotifications.entries.removeIf { it.value < cutoff }
+        }
 
         val appName = try {
             val appInfo = packageManager.getApplicationInfo(pkg, 0)

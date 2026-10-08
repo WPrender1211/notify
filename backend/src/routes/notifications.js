@@ -83,7 +83,7 @@ export const createNotificationRouter = (io) => {
               body: text || '',
               tag: `app-${packageName}`,
               data: { notifId: notifRecord.id, packageName, appName }
-            });
+            }, user.id);
           }
         } catch (e) {}
       }

@@ -21,7 +21,7 @@ export const sendPushNotification = async (payload, userId = null) => {
     return;
   }
 
-  const subscriptions = db.getSubscriptions(userId);
+  const subscriptions = await db.getSubscriptions(userId);
   if (!subscriptions || !subscriptions.length) return;
 
   const payloadString = JSON.stringify(payload);
@@ -31,7 +31,7 @@ export const sendPushNotification = async (payload, userId = null) => {
       await webPush.sendNotification(sub, payloadString);
     } catch (err) {
       if (err.statusCode === 404 || err.statusCode === 410) {
-        db.removeSubscription(sub.endpoint, userId);
+        await db.removeSubscription(sub.endpoint, userId);
       } else {
         console.error('Push notification error for sub:', err.message);
       }
