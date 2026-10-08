@@ -5,16 +5,11 @@ import android.content.Context
 import android.content.Intent
 import android.telephony.TelephonyManager
 import android.util.Log
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 
 class CallStateReceiver : BroadcastReceiver() {
 
     companion object {
         private const val TAG = "CallStateReceiver"
-        private val receiverScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
         private var lastState = TelephonyManager.EXTRA_STATE_IDLE
         private var savedNumber: String? = null
@@ -41,15 +36,11 @@ class CallStateReceiver : BroadcastReceiver() {
 
             Log.d(TAG, "Phone State Broadcast: State=$stateStr, Number=$incomingNumber")
 
-            // Ensure background service is running
             if (prefs.isLoggedIn && !prefs.isServiceRunning) {
                 CallForegroundService.start(context)
             }
 
-            if (!prefs.isLoggedIn) {
-                Log.d(TAG, "User not logged in; ignoring call broadcast.")
-                return
-            }
+            if (!prefs.isLoggedIn) return
 
             if (stateStr == lastState) return
 
@@ -57,29 +48,36 @@ class CallStateReceiver : BroadcastReceiver() {
                 savedNumber = incomingNumber
             }
 
-            val numberToReport = savedNumber ?: incomingNumber ?: "Incoming Caller"
-            val contactName = ContactResolver.getContactName(context, numberToReport)
+            val targetNumber = savedNumber ?: incomingNumber
 
             when (stateStr) {
                 TelephonyManager.EXTRA_STATE_RINGING -> {
                     isIncoming = true
-                    Log.d(TAG, "⚡ REAL CALL DETECTED (RINGING): $numberToReport ($contactName)")
-                    dispatchCallEvent(context, prefs, numberToReport, contactName, "RINGING")
+                    val pendingResult = goAsync()
+                    CallDispatcher.dispatch(context, targetNumber, "RINGING") {
+                        pendingResult.finish()
+                    }
                 }
                 TelephonyManager.EXTRA_STATE_OFFHOOK -> {
                     if (isIncoming || lastState == TelephonyManager.EXTRA_STATE_RINGING) {
                         isIncoming = true
-                        Log.d(TAG, "⚡ REAL CALL ANSWERED: $numberToReport ($contactName)")
-                        dispatchCallEvent(context, prefs, numberToReport, contactName, "ANSWERED")
+                        val pendingResult = goAsync()
+                        CallDispatcher.dispatch(context, targetNumber, "ANSWERED") {
+                            pendingResult.finish()
+                        }
                     }
                 }
                 TelephonyManager.EXTRA_STATE_IDLE -> {
                     if (lastState == TelephonyManager.EXTRA_STATE_RINGING) {
-                        Log.d(TAG, "⚡ REAL CALL MISSED: $numberToReport ($contactName)")
-                        dispatchCallEvent(context, prefs, numberToReport, contactName, "MISSED")
+                        val pendingResult = goAsync()
+                        CallDispatcher.dispatch(context, targetNumber, "MISSED") {
+                            pendingResult.finish()
+                        }
                     } else if (isIncoming) {
-                        Log.d(TAG, "⚡ REAL CALL ENDED: $numberToReport ($contactName)")
-                        dispatchCallEvent(context, prefs, numberToReport, contactName, "ENDED")
+                        val pendingResult = goAsync()
+                        CallDispatcher.dispatch(context, targetNumber, "ENDED") {
+                            pendingResult.finish()
+                        }
                     }
                     isIncoming = false
                     savedNumber = null
@@ -87,38 +85,6 @@ class CallStateReceiver : BroadcastReceiver() {
             }
 
             lastState = stateStr
-        }
-    }
-
-    private fun dispatchCallEvent(
-        context: Context,
-        prefs: AppPreferences,
-        number: String,
-        name: String,
-        state: String
-    ) {
-        val pendingResult = goAsync()
-        receiverScope.launch {
-            try {
-                val serverUrl = prefs.serverUrl
-                val deviceName = prefs.deviceName
-                val apiKey = prefs.apiKey
-
-                Log.d(TAG, "Sending $state to $serverUrl for $number ($name)")
-                val success = ApiClient.sendCallEvent(
-                    serverUrl = serverUrl,
-                    number = number,
-                    name = name,
-                    state = state,
-                    device = deviceName,
-                    apiKey = apiKey
-                )
-                Log.d(TAG, "Dispatch call event success: $success")
-            } catch (e: Exception) {
-                Log.e(TAG, "Error dispatching call event: ${e.message}")
-            } finally {
-                pendingResult.finish()
-            }
         }
     }
 }

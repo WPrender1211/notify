@@ -127,31 +127,24 @@ class CallForegroundService : Service() {
             savedNumber = number
         }
 
-        val callerNumber = savedNumber ?: "Unknown Number"
-        val callerName = ContactResolver.getContactName(this, callerNumber)
+        val targetNum = savedNumber ?: number
 
         when (state) {
             TelephonyManager.CALL_STATE_RINGING -> {
                 isIncoming = true
-                Log.d(TAG, "Incoming call ringing: $callerNumber ($callerName)")
-                dispatchCallEvent(callerNumber, callerName, "RINGING")
+                CallDispatcher.dispatch(this, targetNum, "RINGING")
             }
             TelephonyManager.CALL_STATE_OFFHOOK -> {
                 if (lastState == TelephonyManager.CALL_STATE_RINGING) {
                     isIncoming = true
-                    Log.d(TAG, "Incoming call answered: $callerNumber ($callerName)")
-                    dispatchCallEvent(callerNumber, callerName, "ANSWERED")
+                    CallDispatcher.dispatch(this, targetNum, "ANSWERED")
                 }
             }
             TelephonyManager.CALL_STATE_IDLE -> {
                 if (lastState == TelephonyManager.CALL_STATE_RINGING) {
-                    // Ringing but never answered -> Missed
-                    Log.d(TAG, "Missed call from: $callerNumber ($callerName)")
-                    dispatchCallEvent(callerNumber, callerName, "MISSED")
+                    CallDispatcher.dispatch(this, targetNum, "MISSED")
                 } else if (isIncoming) {
-                    // In call and hung up -> Ended
-                    Log.d(TAG, "Call ended: $callerNumber ($callerName)")
-                    dispatchCallEvent(callerNumber, callerName, "ENDED")
+                    CallDispatcher.dispatch(this, targetNum, "ENDED")
                 }
                 isIncoming = false
                 savedNumber = null
@@ -159,33 +152,6 @@ class CallForegroundService : Service() {
         }
 
         lastState = state
-    }
-
-    private fun dispatchCallEvent(number: String, name: String, state: String) {
-        serviceScope.launch {
-            try {
-                val serverUrl = prefs.serverUrl
-                val deviceName = prefs.deviceName
-                val apiKey = prefs.apiKey
-
-                Log.d(TAG, "Dispatching $state event to $serverUrl for $number ($name)")
-                val success = ApiClient.sendCallEvent(
-                    serverUrl = serverUrl,
-                    number = number,
-                    name = name,
-                    state = state,
-                    device = deviceName,
-                    apiKey = apiKey
-                )
-                if (success) {
-                    Log.d(TAG, "Event $state successfully dispatched to server.")
-                } else {
-                    Log.w(TAG, "Event $state delivery reported non-success.")
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to dispatch call event: ${e.message}")
-            }
-        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

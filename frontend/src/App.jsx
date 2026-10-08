@@ -186,9 +186,9 @@ export function App() {
           const body = `${call.number} ${call.company ? `(${call.company})` : ''}`.trim();
           const options = {
             body: body,
-            tag: 'call-' + Date.now(),
+            tag: 'active-call-alert',
             renotify: true,
-            requireInteraction: true
+            requireInteraction: event === 'RINGING'
           };
 
           if ('serviceWorker' in navigator) {
