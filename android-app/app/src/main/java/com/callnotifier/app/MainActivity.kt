@@ -94,8 +94,29 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, "✅ App Notifications are already enabled!", Toast.LENGTH_SHORT).show()
                 appendLog("✅ App Notifications (WhatsApp, Uber, etc.) are active.")
             } else {
-                appendLog("⚙️ Opening Android Settings to enable Notification Access...")
-                startActivity(Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("⚙️ Enable Notification Access")
+                    .setMessage("If Android shows 'Restricted setting: For your security, this setting is currently unavailable':\n\n1️⃣ Tap 'Open App Info' below.\n2️⃣ Tap the 3 dots (⋮) in the top-right corner.\n3️⃣ Tap 'Allow restricted settings' & enter phone PIN.\n4️⃣ Then tap 'Open Notification Access' to turn ON.")
+                    .setPositiveButton("Open Notification Access") { _, _ ->
+                        appendLog("⚙️ Opening Android Settings to enable Notification Access...")
+                        try {
+                            startActivity(Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                        } catch (e: Exception) {
+                            Toast.makeText(this, "Could not open settings directly", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    .setNeutralButton("Open App Info (3 Dots)") { _, _ ->
+                        try {
+                            val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                data = android.net.Uri.fromParts("package", packageName, null)
+                            }
+                            startActivity(intent)
+                        } catch (e: Exception) {
+                            Toast.makeText(this, "Could not open App Info", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    .setNegativeButton("Cancel", null)
+                    .show()
             }
         }
 
