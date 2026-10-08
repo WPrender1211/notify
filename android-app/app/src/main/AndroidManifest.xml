@@ -42,6 +42,16 @@
             android:exported="false"
             android:foregroundServiceType="dataSync" />
 
+        <!-- Modern Call Screening Service for Instant Caller ID on Android 10+ -->
+        <service
+            android:name=".IncomingCallScreeningService"
+            android:permission="android.permission.BIND_SCREENING_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.telecom.CallScreeningService" />
+            </intent-filter>
+        </service>
+
         <!-- Broadcast Receiver for Call State -->
         <receiver
             android:name=".CallStateReceiver"

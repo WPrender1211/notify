@@ -3,13 +3,13 @@ package com.callnotifier.app
 import android.app.Notification
 import android.app.PendingIntent
 import android.app.Service
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
-import android.telephony.PhoneStateListener
-import android.telephony.TelephonyCallback
 import android.telephony.TelephonyManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -17,54 +17,80 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
 
 class CallForegroundService : Service() {
 
     companion object {
-        private const val NOTIFICATION_ID = 101
         private const val TAG = "CallForegroundService"
+        private const val NOTIFICATION_ID = 1001
 
         fun start(context: Context) {
-            try {
-                val intent = Intent(context, CallForegroundService::class.java)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    context.startForegroundService(intent)
-                } else {
-                    context.startService(intent)
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to start CallForegroundService: ${e.message}")
+            val intent = Intent(context, CallForegroundService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
             }
         }
 
         fun stop(context: Context) {
-            try {
-                val intent = Intent(context, CallForegroundService::class.java)
-                context.stopService(intent)
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to stop CallForegroundService: ${e.message}")
-            }
+            val intent = Intent(context, CallForegroundService::class.java)
+            context.stopService(intent)
         }
     }
 
-    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private lateinit var telephonyManager: TelephonyManager
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private lateinit var prefs: AppPreferences
+    private lateinit var telephonyManager: TelephonyManager
 
-    // State tracking
-    private var lastState = TelephonyManager.CALL_STATE_IDLE
-    private var savedNumber: String? = null
-    private var isIncoming = false
+    private var dynamicCallReceiver: BroadcastReceiver? = null
 
     override fun onCreate() {
         super.onCreate()
         prefs = AppPreferences(this)
-        telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+        telephonyManager = getSystemService(TELEPHONY_SERVICE) as TelephonyManager
+
         startForegroundWithNotification()
-        registerPhoneListener()
+        registerDynamicCallReceiver()
+
         prefs.isServiceRunning = true
-        Log.d(TAG, "CallForegroundService started and listening.")
+        Log.d(TAG, "CallForegroundService started and listening for calls.")
+    }
+
+    private fun registerDynamicCallReceiver() {
+        try {
+            dynamicCallReceiver = object : BroadcastReceiver() {
+                override fun onReceive(context: Context, intent: Intent) {
+                    if (intent.action == TelephonyManager.ACTION_PHONE_STATE_CHANGED) {
+                        val stateStr = intent.getStringExtra(TelephonyManager.EXTRA_STATE) ?: return
+                        @Suppress("DEPRECATION")
+                        val incomingNumber = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER)
+
+                        Log.d(TAG, "Dynamic Service Broadcast: State=$stateStr, Number=$incomingNumber")
+
+                        if (!incomingNumber.isNullOrBlank()) {
+                            when (stateStr) {
+                                TelephonyManager.EXTRA_STATE_RINGING -> {
+                                    CallDispatcher.dispatch(context, incomingNumber, "RINGING", delayMs = 0)
+                                }
+                                TelephonyManager.EXTRA_STATE_OFFHOOK -> {
+                                    CallDispatcher.dispatch(context, incomingNumber, "ANSWERED", delayMs = 0)
+                                }
+                                TelephonyManager.EXTRA_STATE_IDLE -> {
+                                    CallDispatcher.dispatch(context, incomingNumber, "ENDED", delayMs = 500)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            val filter = IntentFilter(TelephonyManager.ACTION_PHONE_STATE_CHANGED)
+            registerReceiver(dynamicCallReceiver, filter)
+            Log.d(TAG, "Dynamic call receiver registered inside Foreground Service.")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error registering dynamic receiver: ${e.message}")
+        }
     }
 
     private fun startForegroundWithNotification() {
@@ -95,75 +121,19 @@ class CallForegroundService : Service() {
         }
     }
 
-    private fun registerPhoneListener() {
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                val callback = object : TelephonyCallback(), TelephonyCallback.CallStateListener {
-                    override fun onCallStateChanged(state: Int) {
-                        handleCallStateChange(state, null)
-                    }
-                }
-                telephonyManager.registerTelephonyCallback(mainExecutor, callback)
-            } else {
-                @Suppress("DEPRECATION")
-                val listener = object : PhoneStateListener() {
-                    @Deprecated("Deprecated in Java")
-                    override fun onCallStateChanged(state: Int, incomingNumber: String?) {
-                        handleCallStateChange(state, incomingNumber)
-                    }
-                }
-                @Suppress("DEPRECATION")
-                telephonyManager.listen(listener, PhoneStateListener.LISTEN_CALL_STATE)
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Exception registering Telephony listener: ${e.message}")
-        }
-    }
-
-    fun handleCallStateChange(state: Int, number: String?) {
-        if (lastState == state) return
-
-        if (!number.isNullOrBlank()) {
-            savedNumber = number
-        }
-
-        val targetNum = savedNumber ?: number
-
-        when (state) {
-            TelephonyManager.CALL_STATE_RINGING -> {
-                isIncoming = true
-                CallDispatcher.dispatch(this, targetNum, "RINGING")
-            }
-            TelephonyManager.CALL_STATE_OFFHOOK -> {
-                if (lastState == TelephonyManager.CALL_STATE_RINGING) {
-                    isIncoming = true
-                    CallDispatcher.dispatch(this, targetNum, "ANSWERED")
-                }
-            }
-            TelephonyManager.CALL_STATE_IDLE -> {
-                if (lastState == TelephonyManager.CALL_STATE_RINGING) {
-                    CallDispatcher.dispatch(this, targetNum, "MISSED")
-                } else if (isIncoming) {
-                    CallDispatcher.dispatch(this, targetNum, "ENDED")
-                }
-                isIncoming = false
-                savedNumber = null
-            }
-        }
-
-        lastState = state
-    }
-
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         return START_STICKY
     }
 
-    override fun onBind(intent: Intent?): IBinder? = null
-
     override fun onDestroy() {
         super.onDestroy()
         prefs.isServiceRunning = false
+        try {
+            dynamicCallReceiver?.let { unregisterReceiver(it) }
+        } catch (e: Exception) {}
         serviceScope.cancel()
         Log.d(TAG, "CallForegroundService stopped.")
     }
+
+    override fun onBind(intent: Intent?): IBinder? = null
 }

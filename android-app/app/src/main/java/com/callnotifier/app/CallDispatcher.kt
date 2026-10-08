@@ -39,8 +39,12 @@ object CallDispatcher {
                 val callerInfo = ContactResolver.resolveCaller(context, rawNumber)
                 val now = System.currentTimeMillis()
 
-                // Deduplication: prevent firing identical event within 1500ms
-                if (state == lastDispatchedState && 
+                val isUpgradeFromUnknown = (lastDispatchedNumber == "Unknown Number" || lastDispatchedNumber == "Incoming Caller" || lastDispatchedNumber == null) &&
+                        (callerInfo.number != "Unknown Number" && callerInfo.number != "Incoming Caller")
+
+                // Deduplication: prevent firing identical event within 1500ms UNLESS upgrading from unknown to real number
+                if (!isUpgradeFromUnknown &&
+                    state == lastDispatchedState && 
                     callerInfo.number == lastDispatchedNumber && 
                     (now - lastDispatchedTime) < 1500) {
                     Log.d(TAG, "Deduplicating duplicate event: $state for ${callerInfo.number}")
