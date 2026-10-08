@@ -54,7 +54,8 @@ class CallStateReceiver : BroadcastReceiver() {
                 TelephonyManager.EXTRA_STATE_RINGING -> {
                     isIncoming = true
                     val pendingResult = goAsync()
-                    CallDispatcher.dispatch(context, targetNumber, "RINGING") {
+                    // Allow 300ms for secondary broadcast with number to arrive or CallLog lookup
+                    CallDispatcher.dispatch(context, targetNumber, "RINGING", delayMs = 300) {
                         pendingResult.finish()
                     }
                 }
@@ -62,22 +63,17 @@ class CallStateReceiver : BroadcastReceiver() {
                     if (isIncoming || lastState == TelephonyManager.EXTRA_STATE_RINGING) {
                         isIncoming = true
                         val pendingResult = goAsync()
-                        CallDispatcher.dispatch(context, targetNumber, "ANSWERED") {
+                        CallDispatcher.dispatch(context, targetNumber, "ANSWERED", delayMs = 0) {
                             pendingResult.finish()
                         }
                     }
                 }
                 TelephonyManager.EXTRA_STATE_IDLE -> {
-                    if (lastState == TelephonyManager.EXTRA_STATE_RINGING) {
-                        val pendingResult = goAsync()
-                        CallDispatcher.dispatch(context, targetNumber, "MISSED") {
-                            pendingResult.finish()
-                        }
-                    } else if (isIncoming) {
-                        val pendingResult = goAsync()
-                        CallDispatcher.dispatch(context, targetNumber, "ENDED") {
-                            pendingResult.finish()
-                        }
+                    val pendingResult = goAsync()
+                    val targetState = if (lastState == TelephonyManager.EXTRA_STATE_RINGING) "MISSED" else "ENDED"
+                    // On IDLE (Call Ended or Missed), delay 500ms so Android has written the actual phone number and contact name into CallLog!
+                    CallDispatcher.dispatch(context, targetNumber, targetState, delayMs = 500) {
+                        pendingResult.finish()
                     }
                     isIncoming = false
                     savedNumber = null

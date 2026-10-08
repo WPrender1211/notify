@@ -14,15 +14,26 @@ object ContactResolver {
     fun resolveCaller(context: Context, incomingNumber: String?): CallerInfo {
         var finalNumber = incomingNumber?.trim()
 
-        // Fallback: If Android OS hid the number in the broadcast, check CallLog for the latest active incoming call
-        if (finalNumber.isNullOrBlank() || finalNumber.equals("Unknown Number", ignoreCase = true) || finalNumber.equals("Incoming Caller", ignoreCase = true)) {
-            val callLogNumber = getLatestNumberFromCallLog(context)
-            if (!callLogNumber.isNullOrBlank()) {
-                finalNumber = callLogNumber
+        // 1. If incomingNumber is empty or unknown, check CallLog for the latest call entry
+        if (finalNumber.isNullOrBlank() || 
+            finalNumber.equals("Unknown Number", ignoreCase = true) || 
+            finalNumber.equals("Incoming Caller", ignoreCase = true) ||
+            finalNumber.equals("Unknown", ignoreCase = true)) {
+            
+            val callLogCaller = getLatestCallerFromCallLog(context)
+            if (callLogCaller != null && !callLogCaller.number.isNullOrBlank()) {
+                return callLogCaller
             }
         }
 
-        val displayNum = if (!finalNumber.isNullOrBlank()) finalNumber else "Unknown Number"
+        val displayNum = if (!finalNumber.isNullOrBlank() && 
+            !finalNumber.equals("Unknown Number", ignoreCase = true) && 
+            !finalNumber.equals("Incoming Caller", ignoreCase = true)) {
+            finalNumber
+        } else {
+            "Unknown Number"
+        }
+
         val contactName = getContactName(context, displayNum)
 
         val displayName = if (contactName != "Unknown Caller") {
@@ -36,7 +47,7 @@ object ContactResolver {
         return CallerInfo(number = displayNum, name = displayName)
     }
 
-    private fun getContactName(context: Context, phoneNumber: String): String {
+    fun getContactName(context: Context, phoneNumber: String): String {
         if (phoneNumber == "Unknown Number" || phoneNumber.isBlank()) return "Unknown Caller"
 
         try {
@@ -62,9 +73,14 @@ object ContactResolver {
         return "Unknown Caller"
     }
 
-    private fun getLatestNumberFromCallLog(context: Context): String? {
+    fun getLatestCallerFromCallLog(context: Context): CallerInfo? {
         try {
-            val projection = arrayOf(CallLog.Calls.NUMBER, CallLog.Calls.CACHED_NAME, CallLog.Calls.DATE)
+            val projection = arrayOf(
+                CallLog.Calls.NUMBER,
+                CallLog.Calls.CACHED_NAME,
+                CallLog.Calls.DATE,
+                CallLog.Calls.TYPE
+            )
             val sortOrder = "${CallLog.Calls.DATE} DESC LIMIT 1"
 
             context.contentResolver.query(
@@ -76,8 +92,20 @@ object ContactResolver {
             )?.use { cursor ->
                 if (cursor.moveToFirst()) {
                     val numIndex = cursor.getColumnIndex(CallLog.Calls.NUMBER)
-                    if (numIndex != -1) {
-                        return cursor.getString(numIndex)
+                    val nameIndex = cursor.getColumnIndex(CallLog.Calls.CACHED_NAME)
+
+                    val number = if (numIndex != -1) cursor.getString(numIndex) else null
+                    val cachedName = if (nameIndex != -1) cursor.getString(nameIndex) else null
+
+                    if (!number.isNullOrBlank()) {
+                        val name = if (!cachedName.isNullOrBlank()) {
+                            cachedName
+                        } else {
+                            val resolvedName = getContactName(context, number)
+                            if (resolvedName != "Unknown Caller") resolvedName else number
+                        }
+                        Log.d(TAG, "Successfully extracted real call from CallLog: Number=$number, Name=$name")
+                        return CallerInfo(number = number, name = name)
                     }
                 }
             }

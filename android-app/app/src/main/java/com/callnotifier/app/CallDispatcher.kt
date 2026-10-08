@@ -5,6 +5,7 @@ import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 object CallDispatcher {
@@ -19,6 +20,7 @@ object CallDispatcher {
         context: Context,
         rawNumber: String?,
         state: String,
+        delayMs: Long = 0,
         onComplete: (() -> Unit)? = null
     ) {
         val prefs = AppPreferences(context)
@@ -28,24 +30,27 @@ object CallDispatcher {
             return
         }
 
-        val callerInfo = ContactResolver.resolveCaller(context, rawNumber)
-        val now = System.currentTimeMillis()
-
-        // Deduplication: prevent firing identical event within 1500ms
-        if (state == lastDispatchedState && 
-            callerInfo.number == lastDispatchedNumber && 
-            (now - lastDispatchedTime) < 1500) {
-            Log.d(TAG, "Deduplicating duplicate event: $state for ${callerInfo.number}")
-            onComplete?.invoke()
-            return
-        }
-
-        lastDispatchedState = state
-        lastDispatchedNumber = callerInfo.number
-        lastDispatchedTime = now
-
         scope.launch {
             try {
+                if (delayMs > 0) {
+                    delay(delayMs)
+                }
+
+                val callerInfo = ContactResolver.resolveCaller(context, rawNumber)
+                val now = System.currentTimeMillis()
+
+                // Deduplication: prevent firing identical event within 1500ms
+                if (state == lastDispatchedState && 
+                    callerInfo.number == lastDispatchedNumber && 
+                    (now - lastDispatchedTime) < 1500) {
+                    Log.d(TAG, "Deduplicating duplicate event: $state for ${callerInfo.number}")
+                    return@launch
+                }
+
+                lastDispatchedState = state
+                lastDispatchedNumber = callerInfo.number
+                lastDispatchedTime = now
+
                 val serverUrl = prefs.serverUrl
                 val deviceName = prefs.deviceName
                 val apiKey = prefs.apiKey
