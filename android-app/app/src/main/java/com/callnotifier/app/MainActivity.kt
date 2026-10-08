@@ -180,6 +180,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (prefs.isLoggedIn) {
+            if (hasPermissions() && !prefs.isServiceRunning) {
+                startServiceInternal()
+            }
+            updateScreens()
+        }
+    }
+
     private fun startServiceInternal() {
         CallForegroundService.start(this)
         prefs.isServiceRunning = true

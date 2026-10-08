@@ -133,6 +133,26 @@ export function App() {
     }
   }, [token, authFetch]);
 
+  // Audio notification bell chime
+  const playAlertChime = () => {
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return;
+      const audioCtx = new AudioContextClass();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.15); // A5
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.5);
+    } catch (e) {}
+  };
+
   // Stable, Long-Lived Real-Time Socket Connection
   useEffect(() => {
     if (!token) return;
@@ -173,31 +193,37 @@ export function App() {
         setActiveCall(null);
       }
 
-      // Trigger instant native desktop notification (when permitted and not muted)
+      // Trigger instant native desktop notification & audio chime (when permitted and not muted)
       const currentMuted = localStorage.getItem('call_notify_muted') === 'true';
 
-      if (!currentMuted && Notification.permission === 'granted') {
-        const title = event === 'RINGING'
-          ? `Incoming: ${call.name || 'Unknown Caller'}`
-          : (event === 'MISSED' ? `Missed: ${call.name || 'Unknown Caller'}` : null);
+      if (!currentMuted) {
+        if (event === 'RINGING') {
+          playAlertChime();
+        }
 
-        if (title) {
-          const body = `${call.number} ${call.company ? `(${call.company})` : ''}`.trim();
-          const options = {
-            body: body,
-            tag: 'active-call-alert',
-            renotify: true,
-            requireInteraction: event === 'RINGING'
-          };
+        if (Notification.permission === 'granted') {
+          const title = event === 'RINGING'
+            ? `Incoming: ${call.name || 'Unknown Caller'}`
+            : (event === 'MISSED' ? `Missed: ${call.name || 'Unknown Caller'}` : null);
 
-          if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.ready.then((reg) => {
-              reg.showNotification(title, options);
-            }).catch(() => {
+          if (title) {
+            const body = `${call.number} ${call.company ? `(${call.company})` : ''}`.trim();
+            const options = {
+              body: body,
+              tag: 'active-call-alert',
+              renotify: true,
+              requireInteraction: event === 'RINGING'
+            };
+
+            if ('serviceWorker' in navigator) {
+              navigator.serviceWorker.ready.then((reg) => {
+                reg.showNotification(title, options);
+              }).catch(() => {
+                try { new Notification(title, options); } catch (e) {}
+              });
+            } else {
               try { new Notification(title, options); } catch (e) {}
-            });
-          } else {
-            try { new Notification(title, options); } catch (e) {}
+            }
           }
         }
       }
