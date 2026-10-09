@@ -162,6 +162,36 @@ export const Stealth404Screen = ({ onUnlock }) => {
     };
   }, []);
 
+  const clickSequenceRef = useRef([]);
+  const clickTimeoutRef = useRef(null);
+
+  const handleLetterClick = (letterId, e) => {
+    e.stopPropagation();
+    clickSequenceRef.current.push(letterId);
+    if (clickSequenceRef.current.length > 8) {
+      clickSequenceRef.current.shift();
+    }
+
+    if (clickTimeoutRef.current) {
+      clearTimeout(clickTimeoutRef.current);
+    }
+    clickTimeoutRef.current = setTimeout(() => {
+      clickSequenceRef.current = [];
+    }, 6000);
+
+    const seq = clickSequenceRef.current.join('-');
+    // Pattern: 1st R (1) -> O (2) -> E (3) -> last R (4)
+    if (
+      seq.includes('r1-o-e-r3') ||
+      seq.includes('r1-o-e-r2') ||
+      seq.includes('r-o-e-r')
+    ) {
+      clickSequenceRef.current = [];
+      if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current);
+      onUnlock();
+    }
+  };
+
   // Relaxed & Forgiving Shortcut Detector (Generous 6-second window)
   useEffect(() => {
     let lastCtrlYTime = 0;
@@ -359,7 +389,13 @@ export const Stealth404Screen = ({ onUnlock }) => {
               </span>
               <span>4</span>
               <span>&nbsp;&nbsp;</span>
-              <span>ERROR</span>
+              <span style={{ display: 'inline-flex', cursor: 'default', userSelect: 'none' }}>
+                <span onClick={(e) => handleLetterClick('e', e)} style={{ cursor: 'default' }}>E</span>
+                <span onClick={(e) => handleLetterClick('r1', e)} style={{ cursor: 'default' }}>R</span>
+                <span onClick={(e) => handleLetterClick('r2', e)} style={{ cursor: 'default' }}>R</span>
+                <span onClick={(e) => handleLetterClick('o', e)} style={{ cursor: 'default' }}>O</span>
+                <span onClick={(e) => handleLetterClick('r3', e)} style={{ cursor: 'default' }}>R</span>
+              </span>
             </div>
           </div>
         </div>
