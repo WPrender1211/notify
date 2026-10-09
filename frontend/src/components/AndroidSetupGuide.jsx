@@ -89,7 +89,7 @@ export const AndroidSetupGuide = ({ isOpen, onClose, user }) => {
                     padding: '2px 8px',
                     borderRadius: '12px'
                   }}>
-                    v3.0 Latest
+                    v4.0 Latest
                   </span>
                 </div>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '14px' }}>
@@ -99,22 +99,22 @@ export const AndroidSetupGuide = ({ isOpen, onClose, user }) => {
                 <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
                   <a
                     href="/app-debug.apk"
-                    download="CallNotify-v3.0.apk"
+                    download="CallNotify-v4.0.apk"
                     className="btn btn-primary"
                     style={{ padding: '9px 18px', fontSize: '0.88rem', textDecoration: 'none', gap: '8px' }}
                   >
                     <ArrowDownCircle size={16} />
-                    <span>Download v3.0 APK (.apk)</span>
+                    <span>Download v4.0 APK (.apk)</span>
                   </a>
 
                   <a
-                    href="/CallNotifier-Android-App-v3.0.zip"
-                    download="CallNotifier-Android-App-v3.0.zip"
+                    href="/CallNotifier-Android-App-v4.0.zip"
+                    download="CallNotifier-Android-App-v4.0.zip"
                     className="btn btn-secondary"
                     style={{ padding: '9px 14px', fontSize: '0.85rem', textDecoration: 'none', gap: '6px' }}
                   >
                     <FileArchive size={15} />
-                    <span>Download v3.0 ZIP (.zip)</span>
+                    <span>Download v4.0 ZIP (.zip)</span>
                   </a>
                 </div>
               </div>
