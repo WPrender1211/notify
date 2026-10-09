@@ -30,11 +30,10 @@ export const sendPushNotification = async (payload, userId = null) => {
     try {
       await webPush.sendNotification(sub, payloadString);
     } catch (err) {
-      if (err.statusCode === 404 || err.statusCode === 410) {
+      // Auto-prune any dead, unsubscribed, or expired subscription from database
+      try {
         await db.removeSubscription(sub.endpoint, userId);
-      } else {
-        console.error('Push notification error for sub:', err.message);
-      }
+      } catch (e) {}
     }
   });
 
