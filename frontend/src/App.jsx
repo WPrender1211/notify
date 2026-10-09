@@ -40,6 +40,10 @@ export function App() {
   const [showAndroidGuide, setShowAndroidGuide] = useState(false);
   const [showAppRulesModal, setShowAppRulesModal] = useState(false);
 
+  useEffect(() => {
+    document.title = '404 Not Found';
+  }, [show404Screen]);
+
   const handleToggleMute = async () => {
     const nextVal = !isMuted;
     setIsMuted(nextVal);
