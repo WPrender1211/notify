@@ -22,7 +22,15 @@ export function App() {
   });
   const [token, setToken] = useState(() => localStorage.getItem('call_notify_token') || null);
 
-  const [show404Screen, setShow404Screen] = useState(!user || !token);
+  const [show404Screen, setShow404Screen] = useState(() => {
+    const isLocked = localStorage.getItem('call_notify_stealth_locked');
+    if (isLocked === 'true') return true;
+    if (isLocked === 'false') return false;
+    const savedUser = localStorage.getItem('call_notify_user');
+    const savedToken = localStorage.getItem('call_notify_token');
+    return !savedUser || !savedToken;
+  });
+
   const [activeTab, setActiveTab] = useState('history');
   const [calls, setCalls] = useState([]);
   const [activeCall, setActiveCall] = useState(null);
@@ -56,9 +64,20 @@ export function App() {
     } catch (e) {}
   };
 
+  const handleLockStealth = () => {
+    localStorage.setItem('call_notify_stealth_locked', 'true');
+    setShow404Screen(true);
+  };
+
+  const handleUnlockStealth = () => {
+    localStorage.setItem('call_notify_stealth_locked', 'false');
+    setShow404Screen(false);
+  };
+
   const handleLoginSuccess = (userData, userToken) => {
     setUser(userData);
     setToken(userToken);
+    localStorage.setItem('call_notify_stealth_locked', 'false');
     setShow404Screen(false);
     localStorage.setItem('call_notify_user', JSON.stringify(userData));
     localStorage.setItem('call_notify_token', userToken);
@@ -67,6 +86,7 @@ export function App() {
   const handleLogout = () => {
     setUser(null);
     setToken(null);
+    localStorage.setItem('call_notify_stealth_locked', 'true');
     setShow404Screen(true);
     setCalls([]);
     setActiveCall(null);
@@ -441,7 +461,7 @@ export function App() {
 
   // If 404 Stealth Screen is active, disguise the dashboard immediately (session preserved)
   if (show404Screen) {
-    return <Stealth404Screen onUnlock={() => setShow404Screen(false)} />;
+    return <Stealth404Screen onUnlock={handleUnlockStealth} />;
   }
 
   // If not logged in, show Auth Modal
@@ -455,7 +475,7 @@ export function App() {
       <Header
         user={user}
         onLogout={handleLogout}
-        onHideDashboard={() => setShow404Screen(true)}
+        onHideDashboard={handleLockStealth}
         activeCall={activeCall}
         isConnected={isConnected}
         onOpenSimulator={() => setShowSimulator(true)}
