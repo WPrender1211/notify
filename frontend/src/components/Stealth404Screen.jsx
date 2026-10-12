@@ -325,9 +325,9 @@ export const Stealth404Screen = ({ onUnlock }) => {
                 marginBottom: '1.75rem'
               }}
             >
-              The requested URL /index.php?api_service=call_notify was not found on this server.
+              The requested URL was not found on this server.
               <br /><br />
-              Unable to load page data or establish connection to backend service.
+              Additionally, a 404 Not Found error was encountered while trying to use an ErrorDocument to handle the request.
             </div>
 
             <div
